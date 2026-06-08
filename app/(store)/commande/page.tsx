@@ -6,7 +6,7 @@ import Link from "next/link";
 import { MapPin, Loader2, Info } from "lucide-react";
 import { useCart } from "@/lib/cart/cart-context";
 import { resolveDeliveryType } from "@/lib/delivery";
-import { DELIVERY_FEES, DELIVERY_TYPE_LABELS } from "@/lib/constants";
+import { DELIVERY_FEES, DELIVERY_TYPE_LABELS, DEFAULT_CENTER } from "@/lib/constants";
 import { checkout } from "@/lib/actions/orders";
 import { formatFcfa } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
@@ -56,26 +56,33 @@ export default function CheckoutPage() {
       () => {
         setLocating(false);
         toast({
-          title: "Impossible de vous localiser",
-          description: "Autorisez la localisation ou saisissez votre adresse.",
+          title: "Position non partagee",
+          description:
+            "Pas de souci : indiquez votre quartier ci-dessus, la commande passera quand meme.",
           variant: "error",
         });
       },
-      { enableHighAccuracy: true, timeout: 10000 },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
     );
   }
 
   async function submit() {
-    if (!coords) {
-      toast({ title: "Partagez votre position", description: "Necessaire pour la livraison.", variant: "error" });
+    if (!vendorId) return;
+    if (!address.trim()) {
+      toast({
+        title: "Indiquez votre quartier",
+        description: "Ex : Tazibouo, pres de la pharmacie.",
+        variant: "error",
+      });
       return;
     }
-    if (!vendorId) return;
+    // Le GPS est optionnel : a defaut, on utilise le centre de Daloa.
+    const dest = coords ?? DEFAULT_CENTER;
     setSubmitting(true);
     const res = await checkout({
       vendorId,
-      destLat: coords.lat,
-      destLng: coords.lng,
+      destLat: dest.lat,
+      destLng: dest.lng,
       destAddress: address,
       items: lines.map((l) => ({
         productId: l.productId,
@@ -106,21 +113,28 @@ export default function CheckoutPage() {
             <MapPin className="size-4 text-brand-green" /> Adresse de livraison
           </h2>
           <div className="space-y-2">
-            <Label htmlFor="address">Indication / quartier</Label>
+            <Label htmlFor="address">Indication / quartier (obligatoire)</Label>
             <Input
               id="address"
               placeholder="Ex: Quartier Tazibouo, pres de la pharmacie"
               value={address}
               onChange={(e) => setAddress(e.target.value)}
+              required
             />
           </div>
           <Button variant="outline" onClick={locate} disabled={locating} className="w-full">
             {locating ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}
-            {coords ? "Position confirmee" : "Partager ma position GPS"}
+            {coords ? "Position confirmee" : "Partager ma position GPS (facultatif)"}
           </Button>
-          {coords && (
+          {coords ? (
+            <p className="text-xs text-brand-green">
+              Position confirmee ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
+            </p>
+          ) : (
             <p className="text-xs text-muted-foreground">
-              Position: {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+              Le GPS ameliore la precision mais n&apos;est pas obligatoire. S&apos;il
+              est bloque (ex : navigateur de WhatsApp), ouvrez le site dans Chrome ou
+              Safari, ou indiquez simplement votre quartier ci-dessus.
             </p>
           )}
         </div>
