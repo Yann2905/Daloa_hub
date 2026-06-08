@@ -71,9 +71,9 @@ export function DashboardShell({
             href={item.href}
             onClick={() => setOpen(false)}
             className={cn(
-              "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 active:scale-[0.98]",
               active
-                ? "bg-brand-green text-white"
+                ? "bg-brand-gradient text-white shadow-soft"
                 : "text-foreground hover:bg-secondary",
             )}
           >

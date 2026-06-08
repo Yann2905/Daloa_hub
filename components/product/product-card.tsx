@@ -12,9 +12,9 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
   return (
     <Link
       href={`/produits/${product.id}`}
-      className="group flex flex-col overflow-hidden rounded-lg border bg-card transition-shadow hover:shadow-md"
+      className="group flex flex-col overflow-hidden rounded-xl border bg-card shadow-soft transition-all duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-card"
     >
-      <div className="relative aspect-square bg-secondary">
+      <div className="relative aspect-square overflow-hidden bg-secondary">
         {img ? (
           <Image
             src={img.url}

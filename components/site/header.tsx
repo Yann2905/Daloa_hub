@@ -9,13 +9,13 @@ export function SiteHeader() {
   const { count } = useCart();
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-white/95 backdrop-blur">
-      <div className="container flex h-14 items-center justify-between gap-3">
+    <header className="glass sticky top-0 z-40 border-b safe-top">
+      <div className="container flex h-16 items-center justify-between gap-3">
         <Logo />
 
         <Link
           href="/produits"
-          className="hidden flex-1 items-center gap-2 rounded-md border bg-secondary px-3 py-2 text-sm text-muted-foreground sm:flex"
+          className="mx-2 hidden max-w-md flex-1 items-center gap-2 rounded-full border bg-secondary/80 px-4 py-2.5 text-sm text-muted-foreground transition-all hover:border-primary/40 hover:shadow-soft sm:flex"
         >
           <Search className="size-4" />
           Rechercher un produit...

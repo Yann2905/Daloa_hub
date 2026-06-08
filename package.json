@@ -12,6 +12,7 @@
     "seed": "node --env-file=.env.local scripts/seed.mjs"
   },
   "dependencies": {
+    "@radix-ui/react-slot": "^1.2.5",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.45.4",
     "bcryptjs": "^3.0.3",
