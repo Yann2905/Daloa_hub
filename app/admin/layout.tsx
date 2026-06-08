@@ -5,9 +5,11 @@ export const dynamic = "force-dynamic";
 
 const nav: NavItem[] = [
   { href: "/admin", label: "Tableau de bord", icon: "LayoutDashboard", exact: true },
+  { href: "/admin/commandes", label: "Commandes", icon: "ShoppingBag" },
   { href: "/admin/utilisateurs", label: "Utilisateurs", icon: "Users" },
-  { href: "/admin/livreurs", label: "Livreurs", icon: "Truck" },
   { href: "/admin/vendeurs", label: "Vendeurs", icon: "Store" },
+  { href: "/admin/livreurs", label: "Livreurs", icon: "Truck" },
+  { href: "/admin/produits", label: "Produits", icon: "Package" },
   { href: "/admin/signalements", label: "Signalements", icon: "Flag" },
   { href: "/admin/abonnements", label: "Abonnements", icon: "CreditCard" },
 ];

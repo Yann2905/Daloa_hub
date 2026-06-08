@@ -81,6 +81,63 @@ export async function setAccountStatus(
   return {};
 }
 
+// ---------------- Changement de role ----------------
+export async function changeUserRole(
+  userId: string,
+  role: "client" | "vendor" | "driver" | "admin",
+): Promise<Result> {
+  await ensureAdmin();
+  try {
+    await sql.begin(async (tx) => {
+      await tx`update users set role = ${role}::user_role where id = ${userId}`;
+      if (role === "vendor") {
+        await tx`insert into vendors (user_id, shop_name)
+                 values (${userId}, 'Ma boutique') on conflict (user_id) do nothing`;
+      } else if (role === "driver") {
+        await tx`insert into drivers (user_id)
+                 values (${userId}) on conflict (user_id) do nothing`;
+      }
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erreur." };
+  }
+  revalidatePath(`/admin/utilisateurs/${userId}`);
+  revalidatePath("/admin/utilisateurs");
+  return {};
+}
+
+// ---------------- Message admin -> utilisateur (notif + email) ----------------
+export async function notifyUser(
+  userId: string,
+  title: string,
+  body: string,
+): Promise<Result> {
+  await ensureAdmin();
+  if (!title.trim() || !body.trim()) return { error: "Titre et message requis." };
+  try {
+    await sql`
+      insert into notifications (user_id, type, title, body)
+      values (${userId}, 'report_received', ${title}, ${body})
+    `;
+    await emailUser(userId, title, `<p>${body.replace(/\n/g, "<br>")}</p>`);
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erreur." };
+  }
+  revalidatePath(`/admin/utilisateurs/${userId}`);
+  return {};
+}
+
+// ---------------- Moderation produit ----------------
+export async function setProductActiveAdmin(
+  productId: string,
+  isActive: boolean,
+): Promise<Result> {
+  await ensureAdmin();
+  await sql`update products set is_active = ${isActive} where id = ${productId}`;
+  revalidatePath("/admin/produits");
+  return {};
+}
+
 // ---------------- Signalements ----------------
 export async function resolveReport(
   reportId: string,

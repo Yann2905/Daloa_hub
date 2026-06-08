@@ -1,15 +1,21 @@
 "use client";
 
-import { useTransition } from "react";
-import { Loader2, Eye } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Loader2, Eye, Send, EyeOff } from "lucide-react";
 import {
   setDriverStatus,
   setVendorStatus,
   setAccountStatus,
   resolveReport,
+  changeUserRole,
+  notifyUser,
+  setProductActiveAdmin,
 } from "@/lib/actions/admin";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 export function DriverValidation({ driverId, status }: { driverId: string; status: string }) {
   const { toast } = useToast();
@@ -108,6 +114,89 @@ export function ViewDocument({ path, label }: { path: string | null; label: stri
       <a href={path} target="_blank" rel="noopener noreferrer">
         <Eye className="size-4" /> {label}
       </a>
+    </Button>
+  );
+}
+
+export function RoleChanger({ userId, role }: { userId: string; role: string }) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
+  const [value, setValue] = useState(role);
+
+  function apply() {
+    if (value === role) return;
+    start(async () => {
+      const res = await changeUserRole(userId, value as "client" | "vendor" | "driver" | "admin");
+      toast(res.error ? { title: res.error, variant: "error" } : { title: "Role mis a jour", variant: "success" });
+    });
+  }
+  return (
+    <div className="flex items-center gap-2">
+      <Select value={value} onChange={(e) => setValue(e.target.value)} className="h-9 w-36">
+        <option value="client">Client</option>
+        <option value="vendor">Vendeur</option>
+        <option value="driver">Livreur</option>
+        <option value="admin">Admin</option>
+      </Select>
+      <Button size="sm" disabled={pending || value === role} onClick={apply}>
+        {pending && <Loader2 className="size-4 animate-spin" />} Appliquer
+      </Button>
+    </div>
+  );
+}
+
+export function NotifyUser({ userId }: { userId: string }) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
+  const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+
+  function send() {
+    start(async () => {
+      const res = await notifyUser(userId, title, body);
+      if (res.error) return toast({ title: res.error, variant: "error" });
+      toast({ title: "Message envoye (notification + email)", variant: "success" });
+      setTitle("");
+      setBody("");
+      setOpen(false);
+    });
+  }
+
+  if (!open)
+    return (
+      <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+        <Send className="size-4" /> Envoyer un message
+      </Button>
+    );
+
+  return (
+    <div className="space-y-2 rounded-lg border bg-card p-3">
+      <Input placeholder="Titre" value={title} onChange={(e) => setTitle(e.target.value)} />
+      <Textarea placeholder="Votre message..." value={body} onChange={(e) => setBody(e.target.value)} />
+      <div className="flex gap-2">
+        <Button size="sm" disabled={pending} onClick={send}>
+          {pending && <Loader2 className="size-4 animate-spin" />} Envoyer
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>Annuler</Button>
+      </div>
+    </div>
+  );
+}
+
+export function ProductActiveToggle({ id, active }: { id: string; active: boolean }) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
+  function toggle() {
+    start(async () => {
+      const res = await setProductActiveAdmin(id, !active);
+      toast(res.error ? { title: res.error, variant: "error" } : { title: "Mis a jour", variant: "success" });
+    });
+  }
+  return (
+    <Button size="sm" variant={active ? "outline" : "default"} disabled={pending} onClick={toggle}>
+      {pending ? <Loader2 className="size-4 animate-spin" /> : active ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+      {active ? "Masquer" : "Afficher"}
     </Button>
   );
 }

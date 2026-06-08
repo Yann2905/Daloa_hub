@@ -54,12 +54,16 @@ export async function getDailySeries(days = 14): Promise<DailyPoint[]> {
 
 // ---------------- Listes administrateur ----------------
 
-export async function listUsers(role?: string): Promise<Profile[]> {
-  const roleFilter = role ? sql`where role = ${role}` : sql``;
+export async function listUsers(
+  opts: { role?: string; q?: string } = {},
+): Promise<Profile[]> {
   return await sql<Profile[]>`
     select id, role, full_name, email, phone, avatar_url, address,
            lat, lng, account_status, created_at, updated_at
-    from users ${roleFilter}
+    from users
+    where 1 = 1
+      ${opts.role ? sql`and role = ${opts.role}::user_role` : sql``}
+      ${opts.q ? sql`and (full_name ilike ${"%" + opts.q + "%"} or email ilike ${"%" + opts.q + "%"} or phone ilike ${"%" + opts.q + "%"})` : sql``}
     order by created_at desc limit 200
   `;
 }
@@ -135,4 +139,195 @@ export async function listSubscriptionsForAdmin(): Promise<{
     where purpose = 'subscription' and status = 'paid'
   `;
   return { subs, revenue: r.revenue };
+}
+
+// ---------------- Dashboard enrichi ----------------
+
+export interface TodayStats {
+  ordersToday: number;
+  revenueToday: number;
+  newUsersToday: number;
+  pendingDrivers: number;
+}
+
+export async function getTodayStats(): Promise<TodayStats> {
+  const [row] = await sql<TodayStats[]>`
+    select
+      (select count(*)::int from orders where created_at::date = current_date) as "ordersToday",
+      (select coalesce(sum(total),0)::float8 from orders
+         where status = 'delivered' and delivered_at::date = current_date) as "revenueToday",
+      (select count(*)::int from users where created_at::date = current_date) as "newUsersToday",
+      (select count(*)::int from drivers where status = 'pending') as "pendingDrivers"
+  `;
+  return row;
+}
+
+export interface RecentOrderRow {
+  id: string;
+  code: string;
+  status: string;
+  total: number;
+  created_at: string;
+  client_name: string;
+  shop_name: string;
+}
+
+export async function getRecentOrders(limit = 8): Promise<RecentOrderRow[]> {
+  return await sql<RecentOrderRow[]>`
+    select o.id, o.code, o.status, o.total::float8 as total, o.created_at,
+           u.full_name as client_name, v.shop_name
+    from orders o
+    join users u on u.id = o.client_id
+    join vendors v on v.id = o.vendor_id
+    order by o.created_at desc limit ${limit}
+  `;
+}
+
+export interface TopVendorRow {
+  id: string;
+  shop_name: string;
+  orders: number;
+  revenue: number;
+  rating_avg: number;
+}
+
+export async function getTopVendors(limit = 5): Promise<TopVendorRow[]> {
+  return await sql<TopVendorRow[]>`
+    select v.id, v.shop_name, v.rating_avg::float8 as rating_avg,
+           count(o.id)::int as orders,
+           coalesce(sum(o.total) filter (where o.status = 'delivered'), 0)::float8 as revenue
+    from vendors v
+    left join orders o on o.vendor_id = v.id
+    where v.status = 'approved'
+    group by v.id
+    order by revenue desc, orders desc
+    limit ${limit}
+  `;
+}
+
+// ---------------- Toutes les commandes (avec filtres) ----------------
+
+export interface AdminOrderRow {
+  id: string;
+  code: string;
+  status: string;
+  fulfillment_type: string;
+  total: number;
+  created_at: string;
+  client_name: string;
+  shop_name: string;
+}
+
+export async function listAllOrders(opts: {
+  status?: string;
+  q?: string;
+  limit?: number;
+} = {}): Promise<AdminOrderRow[]> {
+  return await sql<AdminOrderRow[]>`
+    select o.id, o.code, o.status, o.fulfillment_type, o.total::float8 as total,
+           o.created_at, u.full_name as client_name, v.shop_name
+    from orders o
+    join users u on u.id = o.client_id
+    join vendors v on v.id = o.vendor_id
+    where 1 = 1
+      ${opts.status ? sql`and o.status = ${opts.status}::order_status` : sql``}
+      ${opts.q ? sql`and (o.code ilike ${"%" + opts.q + "%"} or u.full_name ilike ${"%" + opts.q + "%"})` : sql``}
+    order by o.created_at desc
+    limit ${opts.limit ?? 100}
+  `;
+}
+
+// ---------------- Moderation produits ----------------
+
+export interface AdminProductRow {
+  id: string;
+  name: string;
+  price: number;
+  stock: number;
+  is_active: boolean;
+  shop_name: string;
+  vendor_id: string;
+  image_url: string | null;
+}
+
+export async function listAllProducts(opts: { q?: string } = {}): Promise<AdminProductRow[]> {
+  return await sql<AdminProductRow[]>`
+    select p.id, p.name, p.price::float8 as price, p.stock, p.is_active,
+           v.shop_name, p.vendor_id,
+           (select pi.url from product_images pi where pi.product_id = p.id
+            order by pi.position limit 1) as image_url
+    from products p
+    join vendors v on v.id = p.vendor_id
+    ${opts.q ? sql`where p.name ilike ${"%" + opts.q + "%"}` : sql``}
+    order by p.created_at desc
+    limit 200
+  `;
+}
+
+// ---------------- Fiche utilisateur complete ----------------
+
+export interface UserFull {
+  profile: Profile;
+  asClient: { orders: number; spent: number };
+  vendor: (Vendor & { products: number; orders: number; revenue: number }) | null;
+  driver: (Driver & { deliveries: number }) | null;
+  recentOrders: { id: string; code: string; status: string; total: number; created_at: string }[];
+}
+
+export async function getUserFull(userId: string): Promise<UserFull | null> {
+  try {
+    return await getUserFullUnsafe(userId);
+  } catch {
+    return null;
+  }
+}
+
+async function getUserFullUnsafe(userId: string): Promise<UserFull | null> {
+  const [profile] = await sql<Profile[]>`
+    select id, role, full_name, email, phone, avatar_url, address, lat, lng,
+           account_status, created_at, updated_at
+    from users where id = ${userId} limit 1
+  `;
+  if (!profile) return null;
+
+  const [client] = await sql<{ orders: number; spent: number }[]>`
+    select count(*)::int as orders,
+           coalesce(sum(total) filter (where status = 'delivered'), 0)::float8 as spent
+    from orders where client_id = ${userId}
+  `;
+
+  const [vendor] = await sql<(Vendor & { products: number; orders: number; revenue: number })[]>`
+    select v.id, v.user_id, v.shop_name, v.description, v.logo_url, v.status,
+           v.address, v.lat, v.lng, v.rating_avg::float8 as rating_avg, v.rating_count,
+           v.created_at, v.updated_at,
+           (select count(*)::int from products p where p.vendor_id = v.id) as products,
+           (select count(*)::int from orders o where o.vendor_id = v.id) as orders,
+           (select coalesce(sum(o.total) filter (where o.status='delivered'),0)::float8
+              from orders o where o.vendor_id = v.id) as revenue
+    from vendors v where v.user_id = ${userId} limit 1
+  `;
+
+  const [driver] = await sql<(Driver & { deliveries: number })[]>`
+    select d.id, d.user_id, d.status, d.cni_url, d.vehicle_doc_url, d.vehicle_type,
+           d.is_available, d.lat, d.lng, d.last_seen_at,
+           d.rating_avg::float8 as rating_avg, d.rating_count, d.created_at, d.updated_at,
+           (select count(*)::int from orders o where o.driver_id = d.id and o.status='delivered') as deliveries
+    from drivers d where d.user_id = ${userId} limit 1
+  `;
+
+  const recentOrders = await sql<
+    { id: string; code: string; status: string; total: number; created_at: string }[]
+  >`
+    select id, code, status, total::float8 as total, created_at
+    from orders where client_id = ${userId}
+    order by created_at desc limit 6
+  `;
+
+  return {
+    profile,
+    asClient: client,
+    vendor: vendor ?? null,
+    driver: driver ?? null,
+    recentOrders,
+  };
 }
