@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { emailUser } from "@/lib/email";
+import { signedDocumentUrl } from "@/lib/cloudinary-server";
 
 type Result = { error?: string };
 
@@ -79,6 +80,18 @@ export async function setAccountStatus(
   await sql`update users set account_status = ${status}::account_status where id = ${userId}`;
   revalidatePath("/admin/utilisateurs");
   return {};
+}
+
+// ---------------- Consultation document prive (URL signee) ----------------
+export async function signDocument(
+  ref: string,
+): Promise<{ url?: string; error?: string }> {
+  await ensureAdmin();
+  try {
+    return { url: signedDocumentUrl(ref) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erreur." };
+  }
 }
 
 // ---------------- Changement de role ----------------

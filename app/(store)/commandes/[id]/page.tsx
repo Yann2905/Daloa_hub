@@ -25,6 +25,15 @@ export default async function OrderDetailPage({
   const order = await getOrder(id);
   if (!order) notFound();
 
+  // Securite : seul le client, le vendeur, le livreur concernes ou un admin
+  // peuvent consulter cette commande (evite l'acces par devinette d'URL / IDOR).
+  const isStakeholder =
+    order.client_id === user.id ||
+    order.vendors?.user_id === user.id ||
+    order.drivers?.user_id === user.id ||
+    user.role === "admin";
+  if (!isStakeholder) notFound();
+
   // A-t-on deja note cette commande ?
   const [{ n }] = await sql<{ n: number }[]>`
     select count(*)::int as n from ratings

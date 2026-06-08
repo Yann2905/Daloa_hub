@@ -10,6 +10,7 @@ import {
   changeUserRole,
   notifyUser,
   setProductActiveAdmin,
+  signDocument,
 } from "@/lib/actions/admin";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -108,12 +109,19 @@ export function ReportResolve({ reportId, status }: { reportId: string; status: 
 }
 
 export function ViewDocument({ path, label }: { path: string | null; label: string }) {
+  const { toast } = useToast();
+  const [pending, start] = useTransition();
   if (!path) return <span className="text-xs text-muted-foreground">{label} : absent</span>;
+  function open() {
+    start(async () => {
+      const res = await signDocument(path!);
+      if (res.url) window.open(res.url, "_blank", "noopener");
+      else toast({ title: res.error ?? "Erreur", variant: "error" });
+    });
+  }
   return (
-    <Button asChild size="sm" variant="outline">
-      <a href={path} target="_blank" rel="noopener noreferrer">
-        <Eye className="size-4" /> {label}
-      </a>
+    <Button size="sm" variant="outline" disabled={pending} onClick={open}>
+      {pending ? <Loader2 className="size-4 animate-spin" /> : <Eye className="size-4" />} {label}
     </Button>
   );
 }

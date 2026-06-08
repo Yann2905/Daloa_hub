@@ -323,6 +323,13 @@ create table if not exists push_subscriptions (
   created_at timestamptz not null default now()
 );
 
+-- Limitation anti-brute-force (connexion)
+create table if not exists login_attempts (
+  key        text primary key,
+  attempts   integer not null default 0,
+  reset_at   timestamptz not null
+);
+
 -- -------------------------------------------------------------------------
 -- 11. TRIGGERS METIER
 -- -------------------------------------------------------------------------

@@ -7,6 +7,7 @@ import { signIn as authSignIn, signOut as authSignOut } from "@/auth";
 import { sql } from "@/lib/db";
 import { hashPassword } from "@/lib/password";
 import { dashboardPath } from "@/lib/auth";
+import { isRateLimited, recordFailedAttempt, clearAttempts } from "@/lib/rate-limit";
 import type { UserRole } from "@/lib/database.types";
 
 export interface ActionResult {
@@ -28,6 +29,12 @@ export async function signIn(
   });
   if (!parsed.success) return { error: parsed.error.errors[0].message };
 
+  const rlKey = parsed.data.email.toLowerCase();
+  const rl = await isRateLimited(rlKey);
+  if (rl.blocked) {
+    return { error: `Trop de tentatives. Reessayez dans ${rl.retryMin} min.` };
+  }
+
   try {
     await authSignIn("credentials", {
       email: parsed.data.email,
@@ -35,9 +42,14 @@ export async function signIn(
       redirect: false,
     });
   } catch (e) {
-    if (e instanceof AuthError) return { error: "Identifiants incorrects." };
+    if (e instanceof AuthError) {
+      await recordFailedAttempt(rlKey);
+      return { error: "Identifiants incorrects." };
+    }
     throw e;
   }
+
+  await clearAttempts(rlKey);
 
   const rows = await sql<{ role: UserRole; account_status: string }[]>`
     select role, account_status from users

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { emailUser, orderEmailButton } from "@/lib/email";
+import { signDocumentUpload } from "@/lib/cloudinary-server";
 import type { DriverStatus } from "@/lib/database.types";
 
 async function requireDriver() {
@@ -15,6 +16,12 @@ async function requireDriver() {
   `;
   if (!driver) throw new Error("Profil livreur introuvable");
   return { driver, userId: user.id };
+}
+
+/** Parametres signes pour televerser un document prive (CNI/vehicule). */
+export async function getDocumentUploadParams() {
+  await requireDriver(); // seul un livreur authentifie peut demander a uploader
+  return signDocumentUpload();
 }
 
 const docsSchema = z.object({
