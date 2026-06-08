@@ -2,6 +2,9 @@ import { getMyVendor, listVendorOrders } from "@/lib/queries/vendor";
 import { formatFcfa, formatDateTime } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
 import { OrderManage } from "@/components/vendor/order-manage";
+import { AutoRefresh } from "@/components/util/auto-refresh";
+
+export const dynamic = "force-dynamic";
 
 export default async function VendorOrdersPage() {
   const vendor = await getMyVendor();
@@ -11,6 +14,7 @@ export default async function VendorOrdersPage() {
 
   return (
     <div className="space-y-4">
+      <AutoRefresh seconds={15} />
       <h1 className="text-2xl font-bold">Commandes</h1>
 
       {orders.length === 0 ? (

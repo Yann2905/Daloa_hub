@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { emailUser } from "@/lib/email";
 
 type Result = { error?: string };
 
@@ -31,6 +32,13 @@ export async function setDriverStatus(
           ? "Vous pouvez desormais recevoir des livraisons."
           : "Veuillez verifier et soumettre a nouveau vos documents."})
     `;
+    await emailUser(
+      updated[0].user_id,
+      status === "approved" ? "Compte livreur valide" : "Dossier livreur rejete",
+      status === "approved"
+        ? "<p>Felicitations, votre compte livreur est <strong>valide</strong>. Vous pouvez desormais recevoir des livraisons.</p>"
+        : "<p>Votre dossier livreur a ete rejete. Verifiez et soumettez a nouveau vos documents.</p>",
+    );
   }
   revalidatePath("/admin/livreurs");
   return {};
@@ -52,6 +60,11 @@ export async function setVendorStatus(
       values (${updated[0].user_id}, 'vendor_approved', 'Boutique validee',
         'Votre boutique est desormais visible sur DALOA HUB.')
     `;
+    await emailUser(
+      updated[0].user_id,
+      "Boutique validee",
+      "<p>Felicitations, votre boutique est <strong>validee</strong> et desormais visible sur DALOA HUB.</p>",
+    );
   }
   revalidatePath("/admin/vendeurs");
   return {};

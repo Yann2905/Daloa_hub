@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { computeDeliveryFee, resolveDeliveryType } from "@/lib/delivery";
 import { haversineKm } from "@/lib/geo";
+import { emailUser, orderEmailButton } from "@/lib/email";
 import type { CategorySlug } from "@/lib/constants";
 import type { OrderStatus } from "@/lib/database.types";
 
@@ -73,7 +74,37 @@ export async function checkout(payload: unknown): Promise<ActionState> {
         ${deliveryType}::delivery_type, ${deliveryFee}, ${Math.round(distanceKm * 100) / 100}
       ) as id
     `;
-    await sql`select assign_nearest_driver(${row.id})`;
+    // Email au vendeur (recu meme s'il n'est pas connecte)
+    const [vu] = await sql<{ user_id: string; full_name: string }[]>`
+      select u.id as user_id, u.full_name from vendors v
+      join users u on u.id = v.user_id where v.id = ${vendorId}
+    `;
+    if (vu) {
+      await emailUser(
+        vu.user_id,
+        "Nouvelle commande recue",
+        `<p>Bonjour ${vu.full_name},</p><p>Vous avez recu une <strong>nouvelle commande</strong> sur DALOA HUB.</p>${orderEmailButton(row.id, "Voir la commande")}`,
+      );
+    }
+
+    // Affectation du livreur le plus proche + email
+    const [{ assign_nearest_driver: driverId }] = await sql<
+      { assign_nearest_driver: string | null }[]
+    >`select assign_nearest_driver(${row.id})`;
+    if (driverId) {
+      const [du] = await sql<{ user_id: string; full_name: string }[]>`
+        select u.id as user_id, u.full_name from drivers d
+        join users u on u.id = d.user_id where d.id = ${driverId}
+      `;
+      if (du) {
+        await emailUser(
+          du.user_id,
+          "Nouvelle livraison a effectuer",
+          `<p>Bonjour ${du.full_name},</p><p>Une commande vous a ete <strong>affectee</strong>.</p>${orderEmailButton(row.id, "Voir la livraison")}`,
+        );
+      }
+    }
+
     revalidatePath("/commandes");
     return { orderId: row.id };
   } catch (e) {
@@ -121,6 +152,27 @@ export async function updateOrderStatus(
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erreur." };
   }
+
+  // Email d'avancement au client
+  const LABELS: Partial<Record<OrderStatus, string>> = {
+    confirmed: "Commande confirmee",
+    preparing: "Commande en preparation",
+    delivering: "Commande en cours de livraison",
+    delivered: "Commande livree",
+  };
+  if (LABELS[status]) {
+    const [o] = await sql<{ client_id: string; code: string }[]>`
+      select client_id, code from orders where id = ${orderId}
+    `;
+    if (o) {
+      await emailUser(
+        o.client_id,
+        LABELS[status]!,
+        `<p>Votre commande <strong>${o.code}</strong> : ${LABELS[status]!.toLowerCase()}.</p>${orderEmailButton(orderId, "Suivre ma commande")}`,
+      );
+    }
+  }
+
   revalidatePath(`/commandes/${orderId}`);
   revalidatePath("/vendeur/commandes");
   revalidatePath("/livreur");

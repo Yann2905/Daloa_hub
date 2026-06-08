@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { listMyOrders } from "@/lib/queries/orders";
 import { formatFcfa, formatDateTime } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
+import { AutoRefresh } from "@/components/util/auto-refresh";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export default async function OrdersPage() {
 
   return (
     <div className="container space-y-4 py-6">
+      <AutoRefresh seconds={15} />
       <h1 className="text-2xl font-bold">Mes commandes</h1>
 
       {orders.length === 0 ? (

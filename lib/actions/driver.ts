@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { emailUser, orderEmailButton } from "@/lib/email";
 import type { DriverStatus } from "@/lib/database.types";
 
 async function requireDriver() {
@@ -70,6 +71,11 @@ export async function completeDelivery(orderId: string): Promise<{ error?: strin
       'Votre commande a ete livree. Pensez a evaluer le vendeur et le livreur.',
       ${sql.json({ order_id: orderId })})
   `;
+  await emailUser(
+    updated[0].client_id,
+    "Commande livree",
+    `<p>Votre commande a ete <strong>livree</strong>. Pensez a evaluer le vendeur et le livreur.</p>${orderEmailButton(orderId, "Evaluer ma commande")}`,
+  );
   revalidatePath("/livreur");
   return {};
 }

@@ -11,6 +11,7 @@ import {
 } from "@/lib/constants";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
 import { OrderActions } from "@/components/order/order-actions";
+import { AutoRefresh } from "@/components/util/auto-refresh";
 
 export const dynamic = "force-dynamic";
 
@@ -35,6 +36,7 @@ export default async function OrderDetailPage({
 
   return (
     <div className="container max-w-3xl space-y-6 py-6">
+      <AutoRefresh seconds={12} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Commande {order.code}</h1>

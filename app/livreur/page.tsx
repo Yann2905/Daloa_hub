@@ -5,6 +5,7 @@ import { DRIVER_STATUS_LABELS } from "@/lib/constants";
 import { AvailabilityToggle } from "@/components/driver/availability-toggle";
 import { DeliveryCard } from "@/components/driver/delivery-card";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { AutoRefresh } from "@/components/util/auto-refresh";
 import { Button } from "@/components/ui/button";
 
 export default async function DriverDashboard() {
@@ -41,6 +42,7 @@ export default async function DriverDashboard() {
 
   return (
     <div className="space-y-6">
+      <AutoRefresh seconds={15} />
       <div>
         <h1 className="text-2xl font-bold">Tableau de bord</h1>
         <p className="text-sm text-muted-foreground">Gerez votre disponibilite et vos livraisons</p>
