@@ -29,6 +29,7 @@ do $$ begin create type driver_status as enum ('pending','approved','rejected');
 do $$ begin create type vendor_status as enum ('pending','approved','rejected'); exception when duplicate_object then null; end $$;
 do $$ begin create type order_status as enum ('pending','confirmed','preparing','delivering','delivered','refused'); exception when duplicate_object then null; end $$;
 do $$ begin create type delivery_type as enum ('standard','bulky'); exception when duplicate_object then null; end $$;
+do $$ begin create type fulfillment_type as enum ('delivery','pickup'); exception when duplicate_object then null; end $$;
 do $$ begin create type payment_status as enum ('pending','paid','failed','refunded'); exception when duplicate_object then null; end $$;
 do $$ begin create type payment_purpose as enum ('order','subscription','delivery_fee'); exception when duplicate_object then null; end $$;
 do $$ begin create type subscription_status as enum ('active','expired','cancelled'); exception when duplicate_object then null; end $$;
@@ -170,6 +171,7 @@ create table if not exists orders (
   driver_id         uuid references drivers(id) on delete set null,
   status            order_status not null default 'pending',
   delivery_type     delivery_type not null default 'standard',
+  fulfillment_type  fulfillment_type not null default 'delivery',
   subtotal          numeric(12,2) not null default 0,
   delivery_fee      numeric(12,2) not null default 0,
   total             numeric(12,2) not null default 0,

@@ -17,9 +17,10 @@ export interface ActionState {
 
 const checkoutSchema = z.object({
   vendorId: z.string().uuid(),
-  destLat: z.number(),
-  destLng: z.number(),
-  destAddress: z.string().min(3, "Adresse de livraison requise"),
+  fulfillment: z.enum(["delivery", "pickup"]),
+  destLat: z.number().nullable().optional(),
+  destLng: z.number().nullable().optional(),
+  destAddress: z.string().optional().default(""),
   items: z
     .array(
       z.object({
@@ -41,10 +42,15 @@ const checkoutSchema = z.object({
 export async function checkout(payload: unknown): Promise<ActionState> {
   const parsed = checkoutSchema.safeParse(payload);
   if (!parsed.success) return { error: parsed.error.errors[0].message };
-  const { vendorId, destLat, destLng, destAddress, items } = parsed.data;
+  const { vendorId, fulfillment, destLat, destLng, destAddress, items } = parsed.data;
+  const isPickup = fulfillment === "pickup";
 
   const user = await getUser();
   if (!user) return { error: "Vous devez etre connecte pour commander." };
+
+  if (!isPickup && (!destAddress || destAddress.trim().length < 3)) {
+    return { error: "Indiquez votre quartier pour la livraison." };
+  }
 
   const [vendor] = await sql<{ lat: number | null; lng: number | null; status: string }[]>`
     select lat, lng, status from vendors where id = ${vendorId} limit 1
@@ -53,14 +59,25 @@ export async function checkout(payload: unknown): Promise<ActionState> {
     return { error: "Boutique indisponible." };
   }
 
-  const origin = { lat: vendor.lat ?? destLat, lng: vendor.lng ?? destLng };
-  const distanceKm = haversineKm(origin, { lat: destLat, lng: destLng });
   const deliveryType = resolveDeliveryType(
     items.map((i) => ({ categorySlug: i.categorySlug as CategorySlug, isBulky: i.isBulky })),
   );
-  const deliveryFee = computeDeliveryFee(deliveryType, distanceKm);
-  // sql.json garantit un tableau jsonb (un JSON.stringify + ::jsonb donnerait
-  // un scalaire => "cannot extract elements from a scalar" dans place_order).
+
+  // En retrait : aucun frais, aucune position, aucun livreur.
+  let deliveryFee = 0;
+  let distanceKm = 0;
+  let dLat: number | null = null;
+  let dLng: number | null = null;
+  if (!isPickup) {
+    dLat = destLat ?? null;
+    dLng = destLng ?? null;
+    const origin = { lat: vendor.lat ?? dLat ?? 0, lng: vendor.lng ?? dLng ?? 0 };
+    if (dLat != null && dLng != null) {
+      distanceKm = haversineKm(origin, { lat: dLat, lng: dLng });
+    }
+    deliveryFee = computeDeliveryFee(deliveryType, distanceKm);
+  }
+
   const itemsArr = items.map((i) => ({
     product_id: i.productId,
     quantity: i.quantity,
@@ -70,10 +87,18 @@ export async function checkout(payload: unknown): Promise<ActionState> {
     const [row] = await sql<{ id: string }[]>`
       select place_order(
         ${user.id}, ${vendorId}, ${sql.json(itemsArr)},
-        ${destLat}, ${destLng}, ${destAddress},
+        ${dLat}, ${dLng}, ${destAddress},
         ${deliveryType}::delivery_type, ${deliveryFee}, ${Math.round(distanceKm * 100) / 100}
       ) as id
     `;
+    await sql`update orders set fulfillment_type = ${fulfillment}::fulfillment_type where id = ${row.id}`;
+
+    // Recapitulatif pour les emails
+    const [ord] = await sql<{ code: string; total: number }[]>`
+      select code, total::float8 as total from orders where id = ${row.id}
+    `;
+    const modeLabel = isPickup ? "Retrait en boutique" : "Livraison a domicile (paiement a la livraison)";
+
     // Email au vendeur (recu meme s'il n'est pas connecte)
     const [vu] = await sql<{ user_id: string; full_name: string }[]>`
       select u.id as user_id, u.full_name from vendors v
@@ -83,25 +108,37 @@ export async function checkout(payload: unknown): Promise<ActionState> {
       await emailUser(
         vu.user_id,
         "Nouvelle commande recue",
-        `<p>Bonjour ${vu.full_name},</p><p>Vous avez recu une <strong>nouvelle commande</strong> sur DALOA HUB.</p>${orderEmailButton(row.id, "Voir la commande")}`,
+        `<p>Bonjour ${vu.full_name},</p><p>Nouvelle commande <strong>${ord.code}</strong> sur DALOA HUB.</p><p>Mode : <strong>${modeLabel}</strong></p>${orderEmailButton(row.id, "Voir la commande")}`,
       );
     }
 
-    // Affectation du livreur le plus proche + email
-    const [{ assign_nearest_driver: driverId }] = await sql<
-      { assign_nearest_driver: string | null }[]
-    >`select assign_nearest_driver(${row.id})`;
-    if (driverId) {
-      const [du] = await sql<{ user_id: string; full_name: string }[]>`
-        select u.id as user_id, u.full_name from drivers d
-        join users u on u.id = d.user_id where d.id = ${driverId}
-      `;
-      if (du) {
-        await emailUser(
-          du.user_id,
-          "Nouvelle livraison a effectuer",
-          `<p>Bonjour ${du.full_name},</p><p>Une commande vous a ete <strong>affectee</strong>.</p>${orderEmailButton(row.id, "Voir la livraison")}`,
-        );
+    // Confirmation au client
+    await emailUser(
+      user.id,
+      "Votre commande est confirmee",
+      `<p>Merci ! Votre commande <strong>${ord.code}</strong> a bien ete enregistree.</p>
+       <p>Mode de reception : <strong>${modeLabel}</strong></p>
+       <p>Montant a payer : <strong>${ord.total.toLocaleString("fr-FR")} FCFA</strong>${isPickup ? " (a regler en boutique au retrait)" : " (a regler a la livraison)"}.</p>
+       ${orderEmailButton(row.id, "Suivre ma commande")}`,
+    );
+
+    // Livraison uniquement : affectation du livreur le plus proche + email
+    if (!isPickup) {
+      const [{ assign_nearest_driver: driverId }] = await sql<
+        { assign_nearest_driver: string | null }[]
+      >`select assign_nearest_driver(${row.id})`;
+      if (driverId) {
+        const [du] = await sql<{ user_id: string; full_name: string }[]>`
+          select u.id as user_id, u.full_name from drivers d
+          join users u on u.id = d.user_id where d.id = ${driverId}
+        `;
+        if (du) {
+          await emailUser(
+            du.user_id,
+            "Nouvelle livraison a effectuer",
+            `<p>Bonjour ${du.full_name},</p><p>Une commande vous a ete <strong>affectee</strong>.</p>${orderEmailButton(row.id, "Voir la livraison")}`,
+          );
+        }
       }
     }
 

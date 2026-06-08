@@ -103,7 +103,7 @@ export interface VendorOrderRow extends Order {
 export async function listVendorOrders(vendorId: string): Promise<VendorOrderRow[]> {
   return await sql<VendorOrderRow[]>`
     select o.id, o.code, o.client_id, o.vendor_id, o.driver_id, o.status,
-           o.delivery_type, o.subtotal::float8 as subtotal,
+           o.delivery_type, o.fulfillment_type, o.subtotal::float8 as subtotal,
            o.delivery_fee::float8 as delivery_fee, o.total::float8 as total,
            o.distance_km::float8 as distance_km, o.dest_lat, o.dest_lng,
            o.dest_address, o.refused, o.refusal_reason, o.delivery_fee_paid,

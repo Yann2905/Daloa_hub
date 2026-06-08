@@ -68,6 +68,15 @@ export const DELIVERY_TYPE_LABELS: Record<DeliveryType, string> = {
   bulky: "Volumineux",
 };
 
+// --- Mode de reception (choisi par le client au paiement) ---
+export const FULFILLMENT_TYPES = ["delivery", "pickup"] as const;
+export type FulfillmentType = (typeof FULFILLMENT_TYPES)[number];
+
+export const FULFILLMENT_LABELS: Record<FulfillmentType, string> = {
+  delivery: "Livraison a domicile",
+  pickup: "Retrait en boutique",
+};
+
 /**
  * Grille tarifaire de livraison (FCFA).
  * Le systeme choisit automatiquement la ligne selon le type de produit

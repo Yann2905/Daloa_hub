@@ -16,6 +16,7 @@ export type OrderStatus =
   | "delivered"
   | "refused";
 export type DeliveryType = "standard" | "bulky";
+export type FulfillmentType = "delivery" | "pickup";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type PaymentPurpose = "order" | "subscription" | "delivery_fee";
 export type SubscriptionStatus = "active" | "expired" | "cancelled";
@@ -122,6 +123,7 @@ export interface Order {
   driver_id: string | null;
   status: OrderStatus;
   delivery_type: DeliveryType;
+  fulfillment_type: FulfillmentType;
   subtotal: number;
   delivery_fee: number;
   total: number;

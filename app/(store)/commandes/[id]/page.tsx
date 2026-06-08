@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { MapPin, Package } from "lucide-react";
+import { MapPin, Package, Store } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { getOrder } from "@/lib/queries/orders";
 import { sql } from "@/lib/db";
@@ -73,28 +73,49 @@ export default async function OrderDetailPage({
             <span className="text-muted-foreground">Sous-total</span>
             <span>{formatFcfa(order.subtotal)}</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">
-              Livraison ({DELIVERY_TYPE_LABELS[order.delivery_type]}, {order.distance_km} km)
-            </span>
-            <span>{formatFcfa(order.delivery_fee)}</span>
-          </div>
+          {order.fulfillment_type === "pickup" ? (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Retrait en boutique</span>
+              <span className="text-brand-green">Gratuit</span>
+            </div>
+          ) : (
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">
+                Livraison ({DELIVERY_TYPE_LABELS[order.delivery_type]}, {order.distance_km} km)
+              </span>
+              <span>{formatFcfa(order.delivery_fee)}</span>
+            </div>
+          )}
           <div className="flex justify-between border-t pt-2 font-bold">
-            <span>Total</span>
+            <span>Total {order.fulfillment_type === "pickup" ? "(en boutique)" : "(a la livraison)"}</span>
             <span>{formatFcfa(order.refused ? order.delivery_fee : order.total)}</span>
           </div>
         </div>
       </section>
 
-      {/* Livraison */}
-      {order.dest_address && (
-        <section className="rounded-lg border bg-card p-4">
-          <h2 className="flex items-center gap-2 font-semibold">
-            <MapPin className="size-4 text-brand-green" /> Livraison
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">{order.dest_address}</p>
-        </section>
-      )}
+      {/* Mode de reception */}
+      <section className="rounded-lg border bg-card p-4">
+        {order.fulfillment_type === "pickup" ? (
+          <>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <Store className="size-4 text-brand-green" /> Retrait en boutique
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Vous recuperez votre commande directement en boutique. Vous serez
+              notifie des qu&apos;elle sera prete.
+            </p>
+          </>
+        ) : (
+          <>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <MapPin className="size-4 text-brand-green" /> Livraison a domicile
+            </h2>
+            {order.dest_address && (
+              <p className="mt-2 text-sm text-muted-foreground">{order.dest_address}</p>
+            )}
+          </>
+        )}
+      </section>
 
       {/* Suivi */}
       <section className="rounded-lg border bg-card p-4">

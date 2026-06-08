@@ -5,6 +5,7 @@ import type { Order, OrderItem, OrderStatusHistory } from "@/lib/database.types"
 
 const ORDER_COLS = sql`
   o.id, o.code, o.client_id, o.vendor_id, o.driver_id, o.status, o.delivery_type,
+  o.fulfillment_type,
   o.subtotal::float8 as subtotal, o.delivery_fee::float8 as delivery_fee,
   o.total::float8 as total, o.distance_km::float8 as distance_km,
   o.dest_lat, o.dest_lng, o.dest_address, o.refused, o.refusal_reason,

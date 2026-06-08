@@ -27,9 +27,12 @@ export default async function VendorOrdersPage() {
             <div key={o.id} className="rounded-lg border bg-card p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="font-semibold">{o.code}</span>
                     <OrderStatusBadge status={o.status} />
+                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
+                      {o.fulfillment_type === "pickup" ? "Retrait" : "Livraison"}
+                    </span>
                   </div>
                   <p className="mt-1 text-sm text-muted-foreground">
                     {o.order_items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}
@@ -42,7 +45,7 @@ export default async function VendorOrdersPage() {
                 <p className="font-bold">{formatFcfa(o.total)}</p>
               </div>
               <div className="mt-3">
-                <OrderManage orderId={o.id} status={o.status} />
+                <OrderManage orderId={o.id} status={o.status} fulfillment={o.fulfillment_type} />
               </div>
             </div>
           ))}
