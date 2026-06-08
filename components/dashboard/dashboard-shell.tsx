@@ -3,16 +3,46 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X, type LucideIcon } from "lucide-react";
+import {
+  Menu,
+  X,
+  LayoutDashboard,
+  Users,
+  Truck,
+  Store,
+  Flag,
+  CreditCard,
+  Package,
+  ShoppingBag,
+  FileText,
+  type LucideIcon,
+} from "lucide-react";
 import { Logo } from "@/components/site/logo";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { cn } from "@/lib/utils";
 
+// Les composants d'icone (fonctions) ne peuvent pas etre passes d'un Server
+// Component a ce Client Component. On passe donc un NOM d'icone (string) que
+// l'on resout ici.
+const ICONS = {
+  LayoutDashboard,
+  Users,
+  Truck,
+  Store,
+  Flag,
+  CreditCard,
+  Package,
+  ShoppingBag,
+  FileText,
+} satisfies Record<string, LucideIcon>;
+
+export type IconName = keyof typeof ICONS;
+
 export interface NavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  icon: IconName;
   exact?: boolean;
 }
 
@@ -34,7 +64,7 @@ export function DashboardShell({
         const active = item.exact
           ? pathname === item.href
           : pathname === item.href || pathname.startsWith(item.href + "/");
-        const Icon = item.icon;
+        const Icon = ICONS[item.icon];
         return (
           <Link
             key={item.href}

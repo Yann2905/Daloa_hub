@@ -4,9 +4,10 @@ const nextConfig = {
   poweredByHeader: false,
   images: {
     remotePatterns: [
-      // Supabase Storage public bucket
-      { protocol: "https", hostname: "*.supabase.co" },
-      { protocol: "https", hostname: "*.supabase.in" },
+      // Cloudinary (upload des images produits / boutiques / documents)
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      // Images de demonstration (seed)
+      { protocol: "https", hostname: "images.unsplash.com" },
     ],
   },
   async headers() {

@@ -68,7 +68,7 @@ export async function completeDelivery(orderId: string): Promise<{ error?: strin
     insert into notifications (user_id, type, title, body, data)
     values (${updated[0].client_id}, 'delivery_completed', 'Livraison terminee',
       'Votre commande a ete livree. Pensez a evaluer le vendeur et le livreur.',
-      ${JSON.stringify({ order_id: orderId })}::jsonb)
+      ${sql.json({ order_id: orderId })})
   `;
   revalidatePath("/livreur");
   return {};

@@ -58,14 +58,17 @@ export async function checkout(payload: unknown): Promise<ActionState> {
     items.map((i) => ({ categorySlug: i.categorySlug as CategorySlug, isBulky: i.isBulky })),
   );
   const deliveryFee = computeDeliveryFee(deliveryType, distanceKm);
-  const itemsJson = JSON.stringify(
-    items.map((i) => ({ product_id: i.productId, quantity: i.quantity })),
-  );
+  // sql.json garantit un tableau jsonb (un JSON.stringify + ::jsonb donnerait
+  // un scalaire => "cannot extract elements from a scalar" dans place_order).
+  const itemsArr = items.map((i) => ({
+    product_id: i.productId,
+    quantity: i.quantity,
+  }));
 
   try {
     const [row] = await sql<{ id: string }[]>`
       select place_order(
-        ${user.id}, ${vendorId}, ${itemsJson}::jsonb,
+        ${user.id}, ${vendorId}, ${sql.json(itemsArr)},
         ${destLat}, ${destLng}, ${destAddress},
         ${deliveryType}::delivery_type, ${deliveryFee}, ${Math.round(distanceKm * 100) / 100}
       ) as id

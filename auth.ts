@@ -6,6 +6,16 @@ import { sql } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import type { UserRole, AccountStatus } from "@/lib/database.types";
 
+// Sur Vercel, force l'URL de base reelle du deploiement (ecrase un eventuel
+// AUTH_URL=localhost mal configure dans le tableau de bord). Auth.js lit ces
+// variables a l'initialisation ci-dessous, donc on les positionne avant.
+const vercelHost =
+  process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+if (vercelHost) {
+  process.env.AUTH_URL = `https://${vercelHost}`;
+  process.env.NEXTAUTH_URL = `https://${vercelHost}`;
+}
+
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
