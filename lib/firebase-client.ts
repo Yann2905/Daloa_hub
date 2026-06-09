@@ -59,18 +59,17 @@ export async function registerPush(): Promise<PushResult> {
       body: JSON.stringify({ token }),
     });
 
+    // Premier plan : on affiche via le service worker (compatible mobile,
+    // contrairement a new Notification() qui est interdit sur mobile).
     onMessage(messaging, (payload) => {
-      const n = payload.notification;
-      if (n && Notification.permission === "granted") {
-        const notif = new Notification(n.title ?? "DALOA HUB", {
-          body: n.body ?? undefined,
+      const d = (payload.data ?? {}) as { title?: string; body?: string; url?: string };
+      if (Notification.permission === "granted") {
+        registration.showNotification(d.title ?? "DALOA HUB", {
+          body: d.body,
           icon: "/icons/icon.svg",
+          badge: "/icons/icon.svg",
+          data: { url: d.url ?? "/" },
         });
-        notif.onclick = () => {
-          const url = (payload.data && (payload.data as { url?: string }).url) || "/";
-          window.focus();
-          window.location.href = url;
-        };
       }
     });
 

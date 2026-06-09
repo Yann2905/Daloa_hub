@@ -18,15 +18,14 @@ if (config.apiKey && config.projectId) {
   firebase.initializeApp(config);
   const messaging = firebase.messaging();
 
-  // Message recu alors que l'app est en arriere-plan / fermee
+  // Message (data-only) recu en arriere-plan : on construit la notification.
   messaging.onBackgroundMessage((payload) => {
-    const n = (payload && payload.notification) || {};
-    const data = (payload && payload.data) || {};
-    self.registration.showNotification(n.title || "DALOA HUB", {
-      body: n.body || "",
+    const d = (payload && payload.data) || {};
+    self.registration.showNotification(d.title || "DALOA HUB", {
+      body: d.body || "",
       icon: "/icons/icon.svg",
       badge: "/icons/icon.svg",
-      data: { url: data.url || "/" },
+      data: { url: d.url || "/" },
       vibrate: [80, 40, 80],
     });
   });

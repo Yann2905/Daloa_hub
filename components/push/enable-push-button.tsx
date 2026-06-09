@@ -1,16 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, BellRing, Loader2 } from "lucide-react";
+import { Bell, BellRing, Loader2, Send } from "lucide-react";
 import { registerPush, isPushConfigured } from "@/lib/firebase-client";
+import { sendTestPush } from "@/lib/actions/push";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
 export function EnablePushButton() {
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [granted, setGranted] = useState(false);
   const [show, setShow] = useState(false);
+
+  async function test() {
+    setTesting(true);
+    const r = await sendTestPush();
+    setTesting(false);
+    if (!r.configured) {
+      toast({ title: "Serveur non configure", description: r.error ?? "Cle Firebase serveur absente sur Vercel.", variant: "error" });
+    } else if (r.tokens === 0) {
+      toast({ title: "Aucun appareil", description: "Cliquez d'abord sur Activer, puis autorisez.", variant: "error" });
+    } else if (r.sent > 0) {
+      toast({ title: `Envoye a ${r.sent} appareil(s)`, description: "Verifiez vos notifications dans 1-2 s.", variant: "success" });
+    } else {
+      toast({ title: "Echec d'envoi", description: r.error ?? "Token invalide.", variant: "error" });
+    }
+  }
 
   useEffect(() => {
     if (!isPushConfigured()) return;
@@ -59,10 +76,18 @@ export function EnablePushButton() {
           </p>
         </div>
       </div>
-      <Button onClick={enable} disabled={busy} variant={granted ? "outline" : "royal"} size="sm">
-        {busy && <Loader2 className="size-4 animate-spin" />}
-        {granted ? "Reactiver" : "Activer"}
-      </Button>
+      <div className="flex shrink-0 gap-2">
+        <Button onClick={enable} disabled={busy} variant={granted ? "outline" : "royal"} size="sm">
+          {busy && <Loader2 className="size-4 animate-spin" />}
+          {granted ? "Reactiver" : "Activer"}
+        </Button>
+        {granted && (
+          <Button onClick={test} disabled={testing} variant="secondary" size="sm">
+            {testing ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+            Tester
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
