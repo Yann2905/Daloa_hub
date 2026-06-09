@@ -29,7 +29,7 @@ export default async function ProductDetailPage({
     <div className="container grid gap-8 py-6 md:grid-cols-2">
       {/* Galerie */}
       <div className="space-y-3">
-        <div className="relative aspect-square overflow-hidden rounded-xl border bg-secondary">
+        <div className="relative aspect-square overflow-hidden rounded-2xl border bg-secondary shadow-card">
           {cover ? (
             <Image
               src={cover.url}
@@ -73,14 +73,14 @@ export default async function ProductDetailPage({
           )}
         </div>
 
-        <h1 className="text-2xl font-bold">{product.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
 
         <div className="flex items-center gap-3">
-          <span className="text-2xl font-bold text-brand-dark">
+          <span className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-3xl font-extrabold text-transparent">
             {formatFcfa(product.price)}
           </span>
           {product.rating_count > 0 && (
-            <span className="flex items-center gap-1 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700">
               <Star className="size-4 fill-amber-400 text-amber-400" />
               {product.rating_avg.toFixed(1)} ({product.rating_count})
             </span>
@@ -90,9 +90,9 @@ export default async function ProductDetailPage({
         {product.vendors && (
           <Link
             href={`/boutique/${product.vendors.id}`}
-            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm hover:border-brand-green"
+            className="inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors hover:border-primary hover:text-primary"
           >
-            <Store className="size-4 text-brand-green" />
+            <Store className="size-4 text-primary" />
             {product.vendors.shop_name}
           </Link>
         )}

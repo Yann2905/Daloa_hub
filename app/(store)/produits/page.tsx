@@ -30,7 +30,7 @@ export default async function ProductsPage({
   return (
     <div className="container space-y-5 py-6">
       <div>
-        <h1 className="text-2xl font-bold">Produits</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Produits</h1>
         <p className="text-sm text-muted-foreground">
           {total} produit{total > 1 ? "s" : ""} disponible{total > 1 ? "s" : ""}
         </p>
@@ -39,7 +39,7 @@ export default async function ProductsPage({
       <ProductFilters />
 
       {products.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center text-muted-foreground">
+        <div className="rounded-2xl border border-dashed bg-card p-16 text-center text-muted-foreground">
           Aucun produit ne correspond a votre recherche.
         </div>
       ) : (

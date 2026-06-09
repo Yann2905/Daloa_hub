@@ -6,6 +6,7 @@ import { Search } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 export function ProductFilters() {
   const router = useRouter();
@@ -13,11 +14,12 @@ export function ProductFilters() {
   const params = useSearchParams();
   const [, startTransition] = useTransition();
   const [search, setSearch] = useState(params.get("q") ?? "");
+  const activeCat = params.get("categorie") ?? "";
 
   const apply = useCallback(
     (updates: Record<string, string | null>) => {
       const next = new URLSearchParams(params.toString());
-      next.delete("page"); // tout changement de filtre revient a la page 1
+      next.delete("page");
       for (const [k, v] of Object.entries(updates)) {
         if (v == null || v === "") next.delete(k);
         else next.set(k, v);
@@ -27,7 +29,6 @@ export function ProductFilters() {
     [params, pathname, router],
   );
 
-  // Recherche instantanee (debounce)
   useEffect(() => {
     const t = setTimeout(() => {
       if ((params.get("q") ?? "") !== search) apply({ q: search });
@@ -37,39 +38,45 @@ export function ProductFilters() {
   }, [search]);
 
   return (
-    <div className="space-y-3">
+    <div className="sticky top-16 z-20 space-y-3 rounded-2xl border bg-card/90 p-3 shadow-soft backdrop-blur">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
           placeholder="Rechercher un produit..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
+          className="h-12 rounded-xl pl-10 text-base"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Select
-          value={params.get("categorie") ?? ""}
-          onChange={(e) => apply({ categorie: e.target.value })}
-        >
-          <option value="">Toutes categories</option>
-          {CATEGORIES.map((c) => (
-            <option key={c.slug} value={c.slug}>
+      {/* Puces de categories */}
+      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+        {[{ slug: "", label: "Tout" }, ...CATEGORIES].map((c) => {
+          const active = activeCat === c.slug;
+          return (
+            <button
+              key={c.slug || "all"}
+              type="button"
+              onClick={() => apply({ categorie: c.slug })}
+              className={cn(
+                "whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all active:scale-95",
+                active
+                  ? "border-transparent bg-gradient-to-r from-brand-green to-emerald-600 text-white shadow-soft"
+                  : "hover:border-primary/40 hover:text-primary",
+              )}
+            >
               {c.label}
-            </option>
-          ))}
-        </Select>
+            </button>
+          );
+        })}
+      </div>
 
-        <Select
-          value={params.get("tri") ?? "recent"}
-          onChange={(e) => apply({ tri: e.target.value })}
-        >
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <Select value={params.get("tri") ?? "recent"} onChange={(e) => apply({ tri: e.target.value })}>
           <option value="recent">Plus recents</option>
           <option value="price_asc">Prix croissant</option>
           <option value="price_desc">Prix decroissant</option>
         </Select>
-
         <Input
           type="number"
           inputMode="numeric"
@@ -77,11 +84,7 @@ export function ProductFilters() {
           defaultValue={params.get("max") ?? ""}
           onBlur={(e) => apply({ max: e.target.value })}
         />
-
-        <Select
-          value={params.get("dispo") ?? ""}
-          onChange={(e) => apply({ dispo: e.target.value })}
-        >
+        <Select value={params.get("dispo") ?? ""} onChange={(e) => apply({ dispo: e.target.value })}>
           <option value="">Disponibilite</option>
           <option value="1">En stock uniquement</option>
         </Select>

@@ -31,8 +31,8 @@ export default function CartPage() {
       <div className="space-y-3 lg:col-span-2">
         <h1 className="text-2xl font-bold">Mon panier</h1>
         {lines.map((l) => (
-          <div key={l.productId} className="flex gap-3 rounded-lg border bg-card p-3">
-            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-secondary">
+          <div key={l.productId} className="flex gap-3 rounded-2xl border bg-card p-3 shadow-soft">
+            <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
               {l.imageUrl ? (
                 <Image src={l.imageUrl} alt={l.name} fill sizes="80px" className="object-cover" />
               ) : (
@@ -43,9 +43,9 @@ export default function CartPage() {
             </div>
             <div className="flex flex-1 flex-col">
               <p className="line-clamp-2 text-sm font-medium">{l.name}</p>
-              <p className="text-sm font-bold text-brand-dark">{formatFcfa(l.unitPrice)}</p>
+              <p className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-sm font-bold text-transparent">{formatFcfa(l.unitPrice)}</p>
               <div className="mt-auto flex items-center justify-between">
-                <div className="flex items-center rounded-md border">
+                <div className="flex items-center rounded-full border">
                   <button onClick={() => setQty(l.productId, l.quantity - 1)} className="p-2" aria-label="Diminuer">
                     <Minus className="size-3.5" />
                   </button>
@@ -67,8 +67,8 @@ export default function CartPage() {
         ))}
       </div>
 
-      <div className="h-fit space-y-3 rounded-lg border bg-card p-4">
-        <h2 className="font-semibold">Recapitulatif</h2>
+      <div className="sticky top-20 h-fit space-y-3 rounded-2xl border bg-card p-5 shadow-card">
+        <h2 className="text-lg font-bold">Recapitulatif</h2>
         <div className="flex justify-between text-sm">
           <span className="text-muted-foreground">Sous-total</span>
           <span className="font-medium">{formatFcfa(subtotal)}</span>
