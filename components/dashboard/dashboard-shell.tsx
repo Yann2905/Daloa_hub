@@ -21,6 +21,7 @@ import {
 import { Logo } from "@/components/site/logo";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
+import { PushRegister } from "@/components/push/push-register";
 import { cn } from "@/lib/utils";
 
 // Les composants d'icone (fonctions) ne peuvent pas etre passes d'un Server
@@ -89,6 +90,7 @@ export function DashboardShell({
 
   return (
     <div className="flex min-h-dvh bg-secondary">
+      <PushRegister />
       {/* Sidebar desktop */}
       <aside className="hidden w-64 shrink-0 flex-col border-r bg-white p-4 md:flex">
         <div className="mb-6">

@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { getParticipation } from "@/lib/queries/chat";
+import { pushUser } from "@/lib/push";
 
 /**
  * Ouvre (ou cree) la conversation entre le client courant et un vendeur.
@@ -47,6 +48,11 @@ export async function openConversation(input: {
     await sql`update conversations set last_message_at = now() where id = ${conv.id}`;
     await sql`select notify_user(${v.user_id}, 'new_message', 'Nouveau message',
       'Un client souhaite discuter avec vous.', ${sql.json({ conversation_id: conv.id })})`;
+    await pushUser(v.user_id, {
+      title: "Nouveau message",
+      body: "Un client souhaite discuter avec vous.",
+      url: `/messages/${conv.id}`,
+    });
   }
 
   return { id: conv.id };
@@ -77,6 +83,11 @@ export async function sendMessage(input: {
   const recipient = part.isClient ? part.vendor_user : part.client_id;
   await sql`select notify_user(${recipient}, 'new_message', 'Nouveau message',
     'Vous avez recu un nouveau message.', ${sql.json({ conversation_id: parsed.data.conversationId })})`;
+  await pushUser(recipient, {
+    title: "Nouveau message",
+    body: parsed.data.body.trim().slice(0, 90),
+    url: `/messages/${parsed.data.conversationId}`,
+  });
 
   revalidatePath(`/messages/${parsed.data.conversationId}`);
   return {};

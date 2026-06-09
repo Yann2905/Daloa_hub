@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { VerifyBanner } from "@/components/auth/verify-banner";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
+import { PushRegister } from "@/components/push/push-register";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
@@ -22,6 +23,7 @@ export default async function AccountPage() {
 
   return (
     <div className="container max-w-2xl space-y-6 py-6">
+      <PushRegister />
       {!profile.email_verified && <VerifyBanner />}
       <div className="rounded-xl border bg-card p-5 shadow-soft">
         <AvatarUpload name={profile.full_name} avatarUrl={profile.avatar_url} />

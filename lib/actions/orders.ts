@@ -8,6 +8,7 @@ import { computeDeliveryFee, resolveDeliveryType } from "@/lib/delivery";
 import { haversineKm } from "@/lib/geo";
 import { emailUser, orderEmailButton } from "@/lib/email";
 import { smsUser } from "@/lib/sms";
+import { pushUser } from "@/lib/push";
 import type { CategorySlug } from "@/lib/constants";
 import type { OrderStatus } from "@/lib/database.types";
 
@@ -115,6 +116,11 @@ export async function checkout(payload: unknown): Promise<ActionState> {
         vu.user_id,
         `DALOA HUB: nouvelle commande ${ord.code} recue. Connectez-vous pour la traiter.`,
       );
+      await pushUser(vu.user_id, {
+        title: "Nouvelle commande",
+        body: `Commande ${ord.code} recue.`,
+        url: "/vendeur/commandes",
+      });
     }
 
     // Confirmation au client
@@ -158,6 +164,11 @@ export async function checkout(payload: unknown): Promise<ActionState> {
             du.user_id,
             `DALOA HUB: livraison ${ord.code}. Client ${cu.full_name}${cu.phone ? " " + cu.phone : ""}.`,
           );
+          await pushUser(du.user_id, {
+            title: "Nouvelle livraison",
+            body: `Commande ${ord.code} a livrer.`,
+            url: "/livreur",
+          });
 
           // Client : coordonnees de SON livreur
           await sql`select notify_user(${user.id}, 'driver_assigned', 'Livreur affecte',
@@ -172,6 +183,11 @@ export async function checkout(payload: unknown): Promise<ActionState> {
             user.id,
             `DALOA HUB: votre livreur ${du.full_name}${du.phone ? " " + du.phone : ""} pour la commande ${ord.code}.`,
           );
+          await pushUser(user.id, {
+            title: "Livreur affecte",
+            body: `Votre livreur : ${du.full_name}.`,
+            url: `/commandes/${row.id}`,
+          });
         }
       }
     }
