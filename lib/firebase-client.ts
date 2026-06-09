@@ -9,24 +9,24 @@ const firebaseConfig = {
 };
 const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
 
+export type PushResult = "ok" | "denied" | "unsupported" | "unconfigured" | "error";
+
 export function isPushConfigured(): boolean {
   return !!(firebaseConfig.apiKey && firebaseConfig.projectId && vapidKey);
 }
 
 /**
- * Demande la permission de notification, enregistre le SW FCM, recupere le
- * token et l'envoie au serveur. Tout est best-effort (no-op si non configure
- * ou non supporte). Firebase est charge en import dynamique pour ne pas
- * alourdir le bundle.
+ * Active les notifications push. DOIT idealement etre appele depuis un geste
+ * utilisateur (clic), surtout sur iOS/Safari. Retourne un statut.
  */
-export async function registerPush(): Promise<void> {
-  if (!isPushConfigured()) return;
-  if (typeof window === "undefined") return;
-  if (!("serviceWorker" in navigator) || !("Notification" in window)) return;
+export async function registerPush(): Promise<PushResult> {
+  if (!isPushConfigured()) return "unconfigured";
+  if (typeof window === "undefined") return "error";
+  if (!("serviceWorker" in navigator) || !("Notification" in window)) return "unsupported";
 
   try {
     const permission = await Notification.requestPermission();
-    if (permission !== "granted") return;
+    if (permission !== "granted") return "denied";
 
     const qs = new URLSearchParams({
       apiKey: firebaseConfig.apiKey!,
@@ -41,7 +41,9 @@ export async function registerPush(): Promise<void> {
     );
 
     const { initializeApp, getApps } = await import("firebase/app");
-    const { getMessaging, getToken, onMessage } = await import("firebase/messaging");
+    const { getMessaging, getToken, onMessage, isSupported } = await import("firebase/messaging");
+    if (!(await isSupported())) return "unsupported";
+
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const messaging = getMessaging(app);
 
@@ -49,15 +51,14 @@ export async function registerPush(): Promise<void> {
       vapidKey,
       serviceWorkerRegistration: registration,
     });
-    if (token) {
-      await fetch("/api/push/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      });
-    }
+    if (!token) return "error";
 
-    // Message au premier plan : notification systeme cliquable
+    await fetch("/api/push/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+
     onMessage(messaging, (payload) => {
       const n = payload.notification;
       if (n && Notification.permission === "granted") {
@@ -72,7 +73,9 @@ export async function registerPush(): Promise<void> {
         };
       }
     });
+
+    return "ok";
   } catch {
-    /* best-effort */
+    return "error";
   }
 }

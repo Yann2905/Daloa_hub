@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { emailUser, orderEmailButton } from "@/lib/email";
 import { smsUser } from "@/lib/sms";
+import { pushUser } from "@/lib/push";
 import { signDocumentUpload } from "@/lib/cloudinary-server";
 import type { DriverStatus } from "@/lib/database.types";
 
@@ -96,6 +97,11 @@ export async function completeDelivery(orderId: string): Promise<{ error?: strin
     updated[0].client_id,
     "DALOA HUB: votre commande a ete livree. Merci d'evaluer le vendeur et le livreur.",
   );
+  await pushUser(updated[0].client_id, {
+    title: "Commande livree",
+    body: "Votre commande a ete livree. Pensez a evaluer.",
+    url: `/commandes/${orderId}`,
+  });
   revalidatePath("/livreur");
   return {};
 }

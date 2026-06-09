@@ -6,6 +6,7 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { VerifyBanner } from "@/components/auth/verify-banner";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { PushRegister } from "@/components/push/push-register";
+import { EnablePushButton } from "@/components/push/enable-push-button";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
@@ -33,6 +34,8 @@ export default async function AccountPage() {
           <p className="text-sm text-muted-foreground">{profile.phone}</p>
         </div>
       </div>
+
+      <EnablePushButton />
 
       <div className="grid gap-3">
         <Link href="/commandes" className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:border-brand-green">

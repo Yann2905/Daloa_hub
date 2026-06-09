@@ -273,12 +273,20 @@ export async function updateOrderStatus(
         await emailUser(o.client_id, "Votre commande est en route",
           `<p>${body}</p>${orderEmailButton(orderId, "Suivre ma livraison")}`);
         await smsUser(o.client_id, `DALOA HUB: ${body}`);
+        await pushUser(o.client_id, { title: "Commande en route", body, url: `/commandes/${orderId}` });
       } else {
+        await sql`select notify_user(${o.client_id}, 'order_accepted', ${LABELS[status]!},
+          ${`Commande ${o.code} : ${LABELS[status]!.toLowerCase()}.`}, ${sql.json({ order_id: orderId })})`;
         await emailUser(
           o.client_id,
           LABELS[status]!,
           `<p>Votre commande <strong>${o.code}</strong> : ${LABELS[status]!.toLowerCase()}.</p>${orderEmailButton(orderId, "Suivre ma commande")}`,
         );
+        await pushUser(o.client_id, {
+          title: LABELS[status]!,
+          body: `Commande ${o.code} : ${LABELS[status]!.toLowerCase()}.`,
+          url: `/commandes/${orderId}`,
+        });
         if (status === "delivered") {
           await smsUser(o.client_id, `DALOA HUB: commande ${o.code} - ${LABELS[status]!.toLowerCase()}.`);
         }
@@ -306,6 +314,18 @@ export async function refuseOrder(
     await sql`select refuse_order(${orderId}, ${reason})`;
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Erreur." };
+  }
+  if (auth.order.vendor_user) {
+    await emailUser(
+      auth.order.vendor_user,
+      "Commande refusee",
+      "<p>Un client a refuse une commande. Les frais de deplacement du livreur restent dus.</p>",
+    );
+    await pushUser(auth.order.vendor_user, {
+      title: "Commande refusee",
+      body: "Un client a refuse une commande.",
+      url: "/vendeur/commandes",
+    });
   }
   revalidatePath(`/commandes/${orderId}`);
   return {};

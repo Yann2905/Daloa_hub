@@ -5,6 +5,7 @@ import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { emailUser } from "@/lib/email";
 import { smsUser } from "@/lib/sms";
+import { pushUser } from "@/lib/push";
 import { signedDocumentUrl } from "@/lib/cloudinary-server";
 
 type Result = { error?: string };
@@ -47,6 +48,11 @@ export async function setDriverStatus(
         ? "DALOA HUB: votre compte livreur est valide. Vous pouvez recevoir des livraisons."
         : "DALOA HUB: votre dossier livreur a ete rejete. Verifiez vos documents.",
     );
+    await pushUser(updated[0].user_id, {
+      title: status === "approved" ? "Compte livreur valide" : "Dossier livreur rejete",
+      body: status === "approved" ? "Vous pouvez recevoir des livraisons." : "Verifiez vos documents.",
+      url: "/livreur",
+    });
   }
   revalidatePath("/admin/livreurs");
   return {};
@@ -77,6 +83,11 @@ export async function setVendorStatus(
       updated[0].user_id,
       "DALOA HUB: votre boutique est validee et desormais visible.",
     );
+    await pushUser(updated[0].user_id, {
+      title: "Boutique validee",
+      body: "Votre boutique est desormais visible.",
+      url: "/vendeur",
+    });
   }
   revalidatePath("/admin/vendeurs");
   return {};
