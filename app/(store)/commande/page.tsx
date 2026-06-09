@@ -3,8 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MapPin, Loader2, Info, Truck, Store, Check } from "lucide-react";
+import {
+  MapPin,
+  Loader2,
+  Info,
+  Truck,
+  Store,
+  Check,
+  LocateFixed,
+  AlertTriangle,
+} from "lucide-react";
 import { useCart } from "@/lib/cart/cart-context";
+import { useGeolocation } from "@/lib/use-geolocation";
 import { resolveDeliveryType } from "@/lib/delivery";
 import {
   DELIVERY_FEES,
@@ -25,11 +35,10 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { lines, subtotal, vendorId, clear, count } = useCart();
   const { toast } = useToast();
+  const { coords, status, request } = useGeolocation();
 
   const [mode, setMode] = useState<Mode>("delivery");
   const [address, setAddress] = useState("");
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [locating, setLocating] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const deliveryType = resolveDeliveryType(
@@ -49,36 +58,12 @@ export default function CheckoutPage() {
     );
   }
 
-  function locate() {
-    if (!navigator.geolocation) {
-      toast({ title: "Geolocalisation indisponible", variant: "error" });
-      return;
-    }
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocating(false);
-        toast({ title: "Position detectee", variant: "success" });
-      },
-      () => {
-        setLocating(false);
-        toast({
-          title: "Position non partagee",
-          description: "Pas de souci : indiquez votre quartier, la commande passera quand meme.",
-          variant: "error",
-        });
-      },
-      { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 },
-    );
-  }
-
   async function submit() {
     if (!vendorId) return;
-    if (!isPickup && !address.trim()) {
+    if (!isPickup && !coords && !address.trim()) {
       toast({
-        title: "Indiquez votre quartier",
-        description: "Ex : Tazibouo, pres de la pharmacie.",
+        title: "Position requise",
+        description: "Partagez votre position GPS ou indiquez votre quartier.",
         variant: "error",
       });
       return;
@@ -115,92 +100,121 @@ export default function CheckoutPage() {
       <div className="space-y-4 lg:col-span-2">
         <h1 className="text-2xl font-bold">Finaliser la commande</h1>
 
-        {/* Choix du mode de reception */}
-        <div className="space-y-3 rounded-lg border bg-card p-4">
+        {/* Mode de reception */}
+        <div className="space-y-3 rounded-xl border bg-card p-4 shadow-soft">
           <h2 className="font-semibold">Mode de reception</h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <button
               type="button"
               onClick={() => setMode("delivery")}
               className={cn(
-                "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
-                mode === "delivery" ? "border-brand-green bg-brand-green/5" : "hover:border-brand-green/50",
+                "flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all active:scale-[0.98]",
+                mode === "delivery" ? "border-primary bg-primary/5" : "hover:border-primary/40",
               )}
             >
-              <Truck className="mt-0.5 size-5 text-brand-green" />
+              <Truck className="mt-0.5 size-5 text-primary" />
               <div className="flex-1">
                 <p className="font-medium">Livraison a domicile</p>
-                <p className="text-xs text-muted-foreground">
-                  Paiement a la livraison. Frais de livraison ajoutes.
-                </p>
+                <p className="text-xs text-muted-foreground">Paiement a la livraison. Frais ajoutes.</p>
               </div>
-              {mode === "delivery" && <Check className="size-4 text-brand-green" />}
+              {mode === "delivery" && <Check className="size-4 text-primary" />}
             </button>
-
             <button
               type="button"
               onClick={() => setMode("pickup")}
               className={cn(
-                "flex items-start gap-3 rounded-lg border p-3 text-left transition-colors",
-                mode === "pickup" ? "border-brand-green bg-brand-green/5" : "hover:border-brand-green/50",
+                "flex items-start gap-3 rounded-lg border-2 p-3 text-left transition-all active:scale-[0.98]",
+                mode === "pickup" ? "border-primary bg-primary/5" : "hover:border-primary/40",
               )}
             >
-              <Store className="mt-0.5 size-5 text-brand-green" />
+              <Store className="mt-0.5 size-5 text-primary" />
               <div className="flex-1">
                 <p className="font-medium">Retrait en boutique</p>
-                <p className="text-xs text-muted-foreground">
-                  Vous recuperez sur place. <strong>Aucun frais</strong>.
-                </p>
+                <p className="text-xs text-muted-foreground">Vous recuperez sur place. <strong>Gratuit</strong>.</p>
               </div>
-              {mode === "pickup" && <Check className="size-4 text-brand-green" />}
+              {mode === "pickup" && <Check className="size-4 text-primary" />}
             </button>
           </div>
         </div>
 
-        {/* Adresse / position : uniquement en livraison */}
+        {/* Position / adresse : uniquement en livraison */}
         {!isPickup ? (
-          <div className="space-y-3 rounded-lg border bg-card p-4">
+          <div className="space-y-3 rounded-xl border bg-card p-4 shadow-soft">
             <h2 className="flex items-center gap-2 font-semibold">
-              <MapPin className="size-4 text-brand-green" /> Adresse de livraison
+              <MapPin className="size-4 text-primary" /> Ou livrer ?
             </h2>
+
+            {/* Etat GPS */}
+            {status === "granted" && coords ? (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2.5 text-sm text-primary">
+                <Check className="size-4 shrink-0" />
+                <span>
+                  Position detectee (precision ~{Math.round(coords.accuracy)} m). Aucune
+                  saisie necessaire.
+                </span>
+              </div>
+            ) : status === "locating" ? (
+              <div className="flex items-center gap-2 rounded-lg bg-secondary px-3 py-2.5 text-sm text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" /> Recuperation de votre position...
+              </div>
+            ) : (
+              <Button onClick={request} className="w-full" size="lg">
+                <LocateFixed className="size-4" /> Partager ma position GPS
+              </Button>
+            )}
+
+            {/* Permission refusee : guidage */}
+            {status === "denied" && (
+              <div className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>
+                  La localisation est bloquee. Touchez le cadenas a gauche de l&apos;adresse
+                  du site, autorisez la <strong>localisation</strong>, puis reessayez. Ou
+                  indiquez simplement votre quartier ci-dessous.
+                </span>
+              </div>
+            )}
+            {status === "unavailable" && (
+              <div className="flex gap-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>
+                  GPS indisponible ici (ex : navigateur de WhatsApp). Ouvrez le site dans
+                  Chrome/Safari, ou indiquez votre quartier ci-dessous.
+                </span>
+              </div>
+            )}
+
+            {/* Adresse : repli, requise seulement si pas de GPS */}
             <div className="space-y-2">
-              <Label htmlFor="address">Indication / quartier (obligatoire)</Label>
+              <Label htmlFor="address">
+                {coords ? "Precision (facultatif)" : "Indiquez votre quartier"}
+              </Label>
               <Input
                 id="address"
                 placeholder="Ex: Quartier Tazibouo, pres de la pharmacie"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                required
               />
+              {!coords && (
+                <p className="text-xs text-muted-foreground">
+                  Utile si vous ne partagez pas votre position GPS.
+                </p>
+              )}
             </div>
-            <Button variant="outline" onClick={locate} disabled={locating} className="w-full">
-              {locating ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}
-              {coords ? "Position confirmee" : "Partager ma position GPS (facultatif)"}
-            </Button>
-            {coords ? (
-              <p className="text-xs text-brand-green">
-                Position confirmee ({coords.lat.toFixed(4)}, {coords.lng.toFixed(4)})
-              </p>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                Le GPS ameliore la precision mais n&apos;est pas obligatoire. S&apos;il est
-                bloque (ex : navigateur de WhatsApp), ouvrez le site dans Chrome ou Safari.
-              </p>
-            )}
           </div>
         ) : (
-          <div className="flex gap-2 rounded-lg border bg-secondary p-3 text-sm">
-            <Store className="size-4 shrink-0 text-brand-green" />
+          <div className="flex gap-2 rounded-xl border bg-secondary p-3 text-sm">
+            <Store className="size-4 shrink-0 text-primary" />
             <p className="text-muted-foreground">
-              Vous recuperez votre commande directement en boutique apres preparation.
-              Vous serez notifie quand elle sera prete. Aucun frais de livraison.
+              Vous recuperez votre commande en boutique apres preparation. Vous serez
+              notifie quand elle sera prete. Aucun frais de livraison.
             </p>
           </div>
         )}
 
         {!isPickup && (
-          <div className="flex gap-2 rounded-lg border bg-secondary p-3 text-sm">
-            <Info className="size-4 shrink-0 text-brand-green" />
+          <div className="flex gap-2 rounded-xl border bg-secondary p-3 text-sm">
+            <Info className="size-4 shrink-0 text-primary" />
             <p className="text-muted-foreground">
               Le livreur disponible le plus proche vous sera affecte automatiquement.
               Tarif {DELIVERY_TYPE_LABELS[deliveryType]} : {formatFcfa(fees.proximity)} en
@@ -211,7 +225,7 @@ export default function CheckoutPage() {
       </div>
 
       {/* Recapitulatif */}
-      <div className="h-fit space-y-3 rounded-lg border bg-card p-4">
+      <div className="h-fit space-y-3 rounded-xl border bg-card p-4 shadow-soft">
         <h2 className="font-semibold">Recapitulatif</h2>
         {lines.map((l) => (
           <div key={l.productId} className="flex justify-between text-sm">
@@ -229,13 +243,11 @@ export default function CheckoutPage() {
         {isPickup ? (
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">Retrait en boutique</span>
-            <span className="font-medium text-brand-green">Gratuit</span>
+            <span className="font-medium text-primary">Gratuit</span>
           </div>
         ) : (
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">
-              Livraison ({DELIVERY_TYPE_LABELS[deliveryType]})
-            </span>
+            <span className="text-muted-foreground">Livraison ({DELIVERY_TYPE_LABELS[deliveryType]})</span>
             <span className="text-muted-foreground">
               {formatFcfa(fees.proximity)} - {formatFcfa(fees.distance)}
             </span>
@@ -255,9 +267,7 @@ export default function CheckoutPage() {
           {isPickup ? "Confirmer le retrait" : "Confirmer la commande"}
         </Button>
         <p className="text-center text-xs text-muted-foreground">
-          {isPickup
-            ? "Paiement en boutique au retrait."
-            : "Paiement en especes a la livraison."}
+          {isPickup ? "Paiement en boutique au retrait." : "Paiement en especes a la livraison."}
         </p>
       </div>
     </div>

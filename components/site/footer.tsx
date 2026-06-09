@@ -34,9 +34,13 @@ export function SiteFooter() {
         </div>
       </div>
       <div className="border-t py-4">
-        <p className="container text-center text-xs text-muted-foreground">
-          &copy; {new Date().getFullYear()} DALOA HUB. Tous droits reserves.
-        </p>
+        <div className="container flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground sm:flex-row">
+          <p>&copy; {new Date().getFullYear()} DALOA HUB. Tous droits reserves.</p>
+          <nav className="flex items-center gap-4">
+            <Link href="/cgu" className="hover:text-brand-green">CGU</Link>
+            <Link href="/confidentialite" className="hover:text-brand-green">Confidentialite</Link>
+          </nav>
+        </div>
       </div>
     </footer>
   );
