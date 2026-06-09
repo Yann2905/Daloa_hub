@@ -89,7 +89,7 @@ export function DashboardShell({
   );
 
   return (
-    <div className="flex min-h-dvh bg-secondary">
+    <div className="bg-mesh flex min-h-dvh">
       <PushRegister />
       {/* Sidebar desktop */}
       <aside className="hidden w-64 shrink-0 flex-col border-r bg-white p-4 md:flex">

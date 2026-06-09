@@ -10,7 +10,7 @@ export default function AuthLayout({
   return (
     <div className="grid min-h-dvh lg:grid-cols-2">
       {/* Panneau de marque (desktop) */}
-      <aside className="relative hidden overflow-hidden bg-hero-gradient p-10 text-white lg:flex lg:flex-col">
+      <aside className="relative hidden overflow-hidden bg-hero-animated p-10 text-white lg:flex lg:flex-col">
         <div className="relative z-10 flex items-center gap-2">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15 text-sm font-bold backdrop-blur">
             DH
