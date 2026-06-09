@@ -7,6 +7,7 @@ import { getUser } from "@/lib/auth";
 import { computeDeliveryFee, resolveDeliveryType } from "@/lib/delivery";
 import { haversineKm } from "@/lib/geo";
 import { emailUser, orderEmailButton } from "@/lib/email";
+import { smsUser } from "@/lib/sms";
 import type { CategorySlug } from "@/lib/constants";
 import type { OrderStatus } from "@/lib/database.types";
 
@@ -110,6 +111,10 @@ export async function checkout(payload: unknown): Promise<ActionState> {
         "Nouvelle commande recue",
         `<p>Bonjour ${vu.full_name},</p><p>Nouvelle commande <strong>${ord.code}</strong> sur DALOA HUB.</p><p>Mode : <strong>${modeLabel}</strong></p>${orderEmailButton(row.id, "Voir la commande")}`,
       );
+      await smsUser(
+        vu.user_id,
+        `DALOA HUB: nouvelle commande ${ord.code} recue. Connectez-vous pour la traiter.`,
+      );
     }
 
     // Confirmation au client
@@ -120,6 +125,10 @@ export async function checkout(payload: unknown): Promise<ActionState> {
        <p>Mode de reception : <strong>${modeLabel}</strong></p>
        <p>Montant a payer : <strong>${ord.total.toLocaleString("fr-FR")} FCFA</strong>${isPickup ? " (a regler en boutique au retrait)" : " (a regler a la livraison)"}.</p>
        ${orderEmailButton(row.id, "Suivre ma commande")}`,
+    );
+    await smsUser(
+      user.id,
+      `DALOA HUB: votre commande ${ord.code} est confirmee (${ord.total.toLocaleString("fr-FR")} FCFA). Merci !`,
     );
 
     // Livraison uniquement : affectation du livreur le plus proche + email
@@ -137,6 +146,10 @@ export async function checkout(payload: unknown): Promise<ActionState> {
             du.user_id,
             "Nouvelle livraison a effectuer",
             `<p>Bonjour ${du.full_name},</p><p>Une commande vous a ete <strong>affectee</strong>.</p>${orderEmailButton(row.id, "Voir la livraison")}`,
+          );
+          await smsUser(
+            du.user_id,
+            `DALOA HUB: une livraison vous est affectee (${ord.code}). Connectez-vous.`,
           );
         }
       }
@@ -207,6 +220,13 @@ export async function updateOrderStatus(
         LABELS[status]!,
         `<p>Votre commande <strong>${o.code}</strong> : ${LABELS[status]!.toLowerCase()}.</p>${orderEmailButton(orderId, "Suivre ma commande")}`,
       );
+      // SMS pour les etapes les plus importantes (limite le cout)
+      if (status === "delivering" || status === "delivered") {
+        await smsUser(
+          o.client_id,
+          `DALOA HUB: commande ${o.code} - ${LABELS[status]!.toLowerCase()}.`,
+        );
+      }
     }
   }
 

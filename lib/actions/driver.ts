@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { emailUser, orderEmailButton } from "@/lib/email";
+import { smsUser } from "@/lib/sms";
 import { signDocumentUpload } from "@/lib/cloudinary-server";
 import type { DriverStatus } from "@/lib/database.types";
 
@@ -82,6 +83,10 @@ export async function completeDelivery(orderId: string): Promise<{ error?: strin
     updated[0].client_id,
     "Commande livree",
     `<p>Votre commande a ete <strong>livree</strong>. Pensez a evaluer le vendeur et le livreur.</p>${orderEmailButton(orderId, "Evaluer ma commande")}`,
+  );
+  await smsUser(
+    updated[0].client_id,
+    "DALOA HUB: votre commande a ete livree. Merci d'evaluer le vendeur et le livreur.",
   );
   revalidatePath("/livreur");
   return {};
