@@ -33,6 +33,7 @@ export interface PushResult {
   sent: number;
   failed: number;
   error?: string;
+  who?: string;
 }
 
 /** Envoi avec rapport detaille (pour diagnostic). */

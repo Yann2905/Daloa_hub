@@ -53,11 +53,12 @@ export async function registerPush(): Promise<PushResult> {
     });
     if (!token) return "error";
 
-    await fetch("/api/push/register", {
+    const saveRes = await fetch("/api/push/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token }),
     });
+    if (!saveRes.ok) return "error"; // token non enregistre cote serveur
 
     // Premier plan : on affiche via le service worker (compatible mobile,
     // contrairement a new Notification() qui est interdit sur mobile).

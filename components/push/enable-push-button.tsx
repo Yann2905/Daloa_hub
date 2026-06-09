@@ -18,12 +18,13 @@ export function EnablePushButton() {
     setTesting(true);
     const r = await sendTestPush();
     setTesting(false);
+    const who = r.who ? ` (connecte: ${r.who})` : "";
     if (!r.configured) {
       toast({ title: "Serveur non configure", description: r.error ?? "Cle Firebase serveur absente sur Vercel.", variant: "error" });
     } else if (r.tokens === 0) {
-      toast({ title: "Aucun appareil", description: "Cliquez d'abord sur Activer, puis autorisez.", variant: "error" });
+      toast({ title: "Aucun appareil pour ce compte", description: `Re-cliquez sur Activer SUR CET appareil avec CE compte.${who}`, variant: "error" });
     } else if (r.sent > 0) {
-      toast({ title: `Envoye a ${r.sent} appareil(s)`, description: "Verifiez vos notifications dans 1-2 s.", variant: "success" });
+      toast({ title: `Envoye a ${r.sent} appareil(s)`, description: `Verifiez vos notifications dans 1-2 s.${who}`, variant: "success" });
     } else {
       toast({ title: "Echec d'envoi", description: r.error ?? "Token invalide.", variant: "error" });
     }
