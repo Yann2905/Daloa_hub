@@ -19,10 +19,11 @@ export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
   const [pendingSettle, startSettle] = useTransition();
 
   const isPickup = order.fulfillment_type === "pickup";
-  // Cash du au vendeur : prix produit (le livreur garde les frais), uniquement
-  // pour une livraison livree non refusee et non encore reglee.
+  const isSelfDelivery = order.fulfillment_type === "self_delivery";
+  // Cash du au vendeur par le LIVREUR : uniquement en livraison par livreur
+  // (en self-delivery, le vendeur encaisse directement le client).
   const owesVendor =
-    !isPickup && order.status === "delivered" && !order.refused && !order.vendor_settled;
+    !isPickup && !isSelfDelivery && order.status === "delivered" && !order.refused && !order.vendor_settled;
 
   function viewCni() {
     startCni(async () => {
@@ -47,7 +48,7 @@ export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
             <span className="font-semibold">{order.code}</span>
             <OrderStatusBadge status={order.status} />
             <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
-              {isPickup ? "Retrait" : "Livraison"}
+              {isPickup ? "Retrait" : isSelfDelivery ? "Livraison (vous)" : "Livraison"}
             </span>
             {order.vendor_settled && <Badge variant="success">Cash recu</Badge>}
           </div>
@@ -71,6 +72,19 @@ export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
           </a>
         )}
       </div>
+
+      {/* Livraison par le vendeur lui-meme : adresse du client */}
+      {isSelfDelivery && (
+        <div className="flex items-start gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3 text-sm">
+          <Bike className="mt-0.5 size-4 shrink-0 text-primary" />
+          <div>
+            <p className="font-medium text-primary">A livrer vous-meme</p>
+            <p className="text-xs text-muted-foreground">
+              {order.dest_address || "Adresse non precisee"} - appelez le client pour le point de rendez-vous.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Identite du livreur (verification avant remise) */}
       {order.driver && (

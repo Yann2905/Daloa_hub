@@ -116,6 +116,26 @@ export default async function OrderDetailPage({
               notifie des qu&apos;elle sera prete.
             </p>
           </>
+        ) : order.fulfillment_type === "self_delivery" ? (
+          <>
+            <h2 className="flex items-center gap-2 font-semibold">
+              <MapPin className="size-4 text-brand-green" /> Livraison par le vendeur
+            </h2>
+            {order.dest_address && (
+              <p className="mt-2 text-sm text-muted-foreground">{order.dest_address}</p>
+            )}
+            <p className="mt-2 text-sm text-muted-foreground">
+              C&apos;est <strong>{order.vendors?.shop_name}</strong> qui vous livre directement.
+            </p>
+            {order.vendors?.phone && (
+              <a
+                href={`tel:${order.vendors.phone}`}
+                className="mt-3 inline-flex items-center gap-2 rounded-full bg-accent px-4 py-2 text-sm font-semibold text-white"
+              >
+                <Phone className="size-4" /> Appeler le vendeur
+              </a>
+            )}
+          </>
         ) : (
           <>
             <h2 className="flex items-center gap-2 font-semibold">

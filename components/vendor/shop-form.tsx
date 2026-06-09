@@ -23,6 +23,10 @@ export function ShopForm({ vendor }: { vendor: Vendor }) {
     lng: vendor.lng,
   });
   const [logo, setLogo] = useState<string[]>(vendor.logo_url ? [vendor.logo_url] : []);
+  const [deliversSelf, setDeliversSelf] = useState(vendor.delivers_self ?? false);
+  const [selfFee, setSelfFee] = useState(
+    vendor.self_delivery_fee != null ? String(vendor.self_delivery_fee) : "",
+  );
   const [busy, setBusy] = useState(false);
 
   function locate() {
@@ -46,6 +50,8 @@ export function ShopForm({ vendor }: { vendor: Vendor }) {
       lat: coords.lat ?? undefined,
       lng: coords.lng ?? undefined,
       logo_url: logo[0] ?? "",
+      delivers_self: deliversSelf,
+      self_delivery_fee: deliversSelf && selfFee ? Number(selfFee) : undefined,
     });
     setBusy(false);
     if (res.error) return toast({ title: res.error, variant: "error" });
@@ -87,6 +93,42 @@ export function ShopForm({ vendor }: { vendor: Vendor }) {
             </span>
           )}
         </div>
+      </div>
+
+      {/* Livraison par le vendeur */}
+      <div className="space-y-3 rounded-lg border bg-secondary p-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input
+            type="checkbox"
+            checked={deliversSelf}
+            onChange={(e) => setDeliversSelf(e.target.checked)}
+            className="mt-1 size-4 accent-primary"
+          />
+          <span>
+            <span className="text-sm font-medium">Je livre moi-meme (j&apos;ai une moto)</span>
+            <span className="block text-xs text-muted-foreground">
+              Les commandes en livraison vous seront confiees directement, sans livreur DALOA HUB.
+              Vous encaissez le client vous-meme.
+            </span>
+          </span>
+        </label>
+        {deliversSelf && (
+          <div className="space-y-2 pl-7">
+            <Label htmlFor="self_fee">Vos frais de livraison (FCFA)</Label>
+            <Input
+              id="self_fee"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              placeholder="Ex : 500"
+              value={selfFee}
+              onChange={(e) => setSelfFee(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Laissez vide pour utiliser le calcul automatique selon la distance.
+            </p>
+          </div>
+        )}
       </div>
 
       <Button type="submit" disabled={busy}>

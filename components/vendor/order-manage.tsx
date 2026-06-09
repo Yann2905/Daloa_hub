@@ -19,10 +19,13 @@ function nextSteps(status: OrderStatus, fulfillment: FulfillmentType): Step[] {
   if (status === "confirmed")
     return [{ status: "preparing", label: "Mettre en preparation" }];
   if (status === "preparing") {
-    return fulfillment === "pickup"
-      ? [{ status: "delivered", label: "Remettre au client (retire)" }]
-      : [{ status: "delivering", label: "Confier au livreur" }];
+    if (fulfillment === "pickup") return [{ status: "delivered", label: "Remettre au client (retire)" }];
+    if (fulfillment === "self_delivery") return [{ status: "delivering", label: "Partir en livraison" }];
+    return [{ status: "delivering", label: "Confier au livreur" }];
   }
+  // Le vendeur qui livre lui-meme cloture la livraison.
+  if (status === "delivering" && fulfillment === "self_delivery")
+    return [{ status: "delivered", label: "Marquer livree" }];
   return [];
 }
 

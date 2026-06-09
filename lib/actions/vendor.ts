@@ -122,17 +122,21 @@ const shopSchema = z.object({
   lat: z.coerce.number().optional(),
   lng: z.coerce.number().optional(),
   logo_url: z.string().url().optional().or(z.literal("")),
+  delivers_self: z.coerce.boolean().optional(),
+  self_delivery_fee: z.coerce.number().int().min(0).optional(),
 });
 
 export async function updateShop(input: unknown): Promise<VResult> {
   const { vendorId } = await requireVendor();
   const parsed = shopSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0].message };
-  const { shop_name, description, address, lat, lng, logo_url } = parsed.data;
+  const { shop_name, description, address, lat, lng, logo_url, delivers_self, self_delivery_fee } = parsed.data;
   await sql`
     update vendors set shop_name = ${shop_name}, description = ${description ?? null},
       address = ${address ?? null}, lat = ${lat ?? null}, lng = ${lng ?? null},
-      logo_url = ${logo_url || null}
+      logo_url = ${logo_url || null},
+      delivers_self = ${delivers_self ?? false},
+      self_delivery_fee = ${self_delivery_fee ?? null}
     where id = ${vendorId}
   `;
   revalidatePath("/vendeur/boutique");

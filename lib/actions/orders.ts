@@ -62,12 +62,23 @@ export async function checkout(payload: unknown): Promise<ActionState> {
     return { error: "Indiquez votre quartier pour la livraison." };
   }
 
-  const [vendor] = await sql<{ lat: number | null; lng: number | null; status: string }[]>`
-    select lat, lng, status from vendors where id = ${vendorId} limit 1
+  const [vendor] = await sql<
+    { lat: number | null; lng: number | null; status: string; delivers_self: boolean; self_delivery_fee: number | null }[]
+  >`
+    select lat, lng, status, delivers_self, self_delivery_fee
+    from vendors where id = ${vendorId} limit 1
   `;
   if (!vendor || vendor.status !== "approved") {
     return { error: "Boutique indisponible." };
   }
+
+  // Le vendeur livre-t-il lui-meme ? (mode hybride)
+  const selfDeliver = !isPickup && vendor.delivers_self;
+  const fulfillmentType: "pickup" | "delivery" | "self_delivery" = isPickup
+    ? "pickup"
+    : selfDeliver
+      ? "self_delivery"
+      : "delivery";
 
   const deliveryType = resolveDeliveryType(
     items.map((i) => ({ categorySlug: i.categorySlug as CategorySlug, isBulky: i.isBulky })),
@@ -85,7 +96,11 @@ export async function checkout(payload: unknown): Promise<ActionState> {
     if (dLat != null && dLng != null) {
       distanceKm = haversineKm(origin, { lat: dLat, lng: dLng });
     }
-    deliveryFee = computeDeliveryFee(deliveryType, distanceKm);
+    // Frais : le vendeur fixe les siens s'il livre lui-meme, sinon calcul auto.
+    deliveryFee =
+      selfDeliver && vendor.self_delivery_fee != null
+        ? vendor.self_delivery_fee
+        : computeDeliveryFee(deliveryType, distanceKm);
   }
 
   const itemsArr = items.map((i) => ({
@@ -101,13 +116,17 @@ export async function checkout(payload: unknown): Promise<ActionState> {
         ${deliveryType}::delivery_type, ${deliveryFee}, ${Math.round(distanceKm * 100) / 100}
       ) as id
     `;
-    await sql`update orders set fulfillment_type = ${fulfillment}::fulfillment_type where id = ${row.id}`;
+    await sql`update orders set fulfillment_type = ${fulfillmentType}::fulfillment_type where id = ${row.id}`;
 
     // Recapitulatif pour les emails
     const [ord] = await sql<{ code: string; total: number }[]>`
       select code, total::float8 as total from orders where id = ${row.id}
     `;
-    const modeLabel = isPickup ? "Retrait en boutique" : "Livraison a domicile (paiement a la livraison)";
+    const modeLabel = isPickup
+      ? "Retrait en boutique"
+      : selfDeliver
+        ? "Livraison par le vendeur (paiement a la livraison)"
+        : "Livraison a domicile (paiement a la livraison)";
 
     // Email au vendeur (recu meme s'il n'est pas connecte)
     const [vu] = await sql<{ user_id: string; full_name: string }[]>`
@@ -145,8 +164,9 @@ export async function checkout(payload: unknown): Promise<ActionState> {
       `DALOA HUB: votre commande ${ord.code} est confirmee (${ord.total.toLocaleString("fr-FR")} FCFA). Merci !`,
     );
 
-    // Livraison uniquement : affectation du livreur le plus proche
-    if (!isPickup) {
+    // Livraison par livreur uniquement : affectation du livreur le plus proche.
+    // (Si le vendeur livre lui-meme, aucun livreur n'est affecte.)
+    if (!isPickup && !selfDeliver) {
       const [{ assign_nearest_driver: driverId }] = await sql<
         { assign_nearest_driver: string | null }[]
       >`select assign_nearest_driver(${row.id})`;

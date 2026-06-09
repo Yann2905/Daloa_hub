@@ -29,7 +29,7 @@ do $$ begin create type driver_status as enum ('pending','approved','rejected');
 do $$ begin create type vendor_status as enum ('pending','approved','rejected'); exception when duplicate_object then null; end $$;
 do $$ begin create type order_status as enum ('pending','confirmed','preparing','delivering','delivered','refused'); exception when duplicate_object then null; end $$;
 do $$ begin create type delivery_type as enum ('standard','bulky'); exception when duplicate_object then null; end $$;
-do $$ begin create type fulfillment_type as enum ('delivery','pickup'); exception when duplicate_object then null; end $$;
+do $$ begin create type fulfillment_type as enum ('delivery','pickup','self_delivery'); exception when duplicate_object then null; end $$;
 do $$ begin create type payment_status as enum ('pending','paid','failed','refunded'); exception when duplicate_object then null; end $$;
 do $$ begin create type payment_purpose as enum ('order','subscription','delivery_fee'); exception when duplicate_object then null; end $$;
 do $$ begin create type subscription_status as enum ('active','expired','cancelled'); exception when duplicate_object then null; end $$;
@@ -92,6 +92,8 @@ create table if not exists vendors (
   address      text,
   lat          double precision,
   lng          double precision,
+  delivers_self      boolean not null default false,
+  self_delivery_fee  integer,
   rating_avg   numeric(3,2) not null default 0,
   rating_count integer not null default 0,
   created_at   timestamptz not null default now(),

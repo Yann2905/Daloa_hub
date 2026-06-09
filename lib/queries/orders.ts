@@ -39,7 +39,7 @@ export async function listMyOrders(): Promise<OrderListRow[]> {
 }
 
 export interface OrderDetail extends Order {
-  vendors: { id: string; shop_name: string; user_id: string } | null;
+  vendors: { id: string; shop_name: string; user_id: string; phone: string | null } | null;
   drivers: {
     id: string;
     user_id: string;
@@ -56,7 +56,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
     const rows = await sql<OrderDetail[]>`
       select ${ORDER_COLS},
         json_build_object('id', v.id, 'shop_name', v.shop_name,
-          'user_id', v.user_id) as vendors,
+          'user_id', v.user_id, 'phone', vu.phone) as vendors,
         case when d.id is not null
           then json_build_object('id', d.id, 'user_id', d.user_id,
             'full_name', du.full_name, 'phone', du.phone,
@@ -74,6 +74,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
           from order_status_history h where h.order_id = o.id), '[]') as order_status_history
       from orders o
       join vendors v on v.id = o.vendor_id
+      join users vu on vu.id = v.user_id
       left join drivers d on d.id = o.driver_id
       left join users du on du.id = d.user_id
       where o.id = ${id}

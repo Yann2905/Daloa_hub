@@ -16,7 +16,7 @@ export type OrderStatus =
   | "delivered"
   | "refused";
 export type DeliveryType = "standard" | "bulky";
-export type FulfillmentType = "delivery" | "pickup";
+export type FulfillmentType = "delivery" | "pickup" | "self_delivery";
 export type PaymentStatus = "pending" | "paid" | "failed" | "refunded";
 export type PaymentPurpose = "order" | "subscription" | "delivery_fee";
 export type SubscriptionStatus = "active" | "expired" | "cancelled";
@@ -62,6 +62,8 @@ export interface Vendor {
   address: string | null;
   lat: number | null;
   lng: number | null;
+  delivers_self: boolean;
+  self_delivery_fee: number | null;
   rating_avg: number;
   rating_count: number;
   created_at: string;
