@@ -16,6 +16,36 @@ export function isPushConfigured(): boolean {
 }
 
 /**
+ * Recupere le token FCM de CET appareil (la permission doit deja etre
+ * accordee). Sert au bouton "Tester" pour viser l'appareil directement.
+ */
+export async function getDeviceToken(): Promise<string | null> {
+  if (!isPushConfigured()) return null;
+  if (typeof window === "undefined" || !("serviceWorker" in navigator) || !("Notification" in window)) return null;
+  if (Notification.permission !== "granted") return null;
+  try {
+    const qs = new URLSearchParams({
+      apiKey: firebaseConfig.apiKey!,
+      authDomain: firebaseConfig.authDomain ?? "",
+      projectId: firebaseConfig.projectId!,
+      messagingSenderId: firebaseConfig.messagingSenderId ?? "",
+      appId: firebaseConfig.appId ?? "",
+    });
+    const registration = await navigator.serviceWorker.register(
+      `/firebase-messaging-sw.js?${qs.toString()}`,
+      { scope: "/firebase-push" },
+    );
+    const { initializeApp, getApps } = await import("firebase/app");
+    const { getMessaging, getToken, isSupported } = await import("firebase/messaging");
+    if (!(await isSupported())) return null;
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    return await getToken(getMessaging(app), { vapidKey, serviceWorkerRegistration: registration });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Active les notifications push. DOIT idealement etre appele depuis un geste
  * utilisateur (clic), surtout sur iOS/Safari. Retourne un statut.
  */

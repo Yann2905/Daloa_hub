@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Bell, BellRing, Loader2, Send } from "lucide-react";
-import { registerPush, isPushConfigured } from "@/lib/firebase-client";
-import { sendTestPush } from "@/lib/actions/push";
+import { registerPush, getDeviceToken, isPushConfigured } from "@/lib/firebase-client";
+import { sendTestPushToToken } from "@/lib/actions/push";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
@@ -16,17 +16,18 @@ export function EnablePushButton() {
 
   async function test() {
     setTesting(true);
-    const r = await sendTestPush();
+    const token = await getDeviceToken();
+    if (!token) {
+      setTesting(false);
+      toast({ title: "Cliquez d'abord sur Activer", description: "Autorisez les notifications, puis re-testez.", variant: "error" });
+      return;
+    }
+    const r = await sendTestPushToToken(token);
     setTesting(false);
-    const who = r.who ? ` (connecte: ${r.who})` : "";
-    if (!r.configured) {
-      toast({ title: "Serveur non configure", description: r.error ?? "Cle Firebase serveur absente sur Vercel.", variant: "error" });
-    } else if (r.tokens === 0) {
-      toast({ title: "Aucun appareil pour ce compte", description: `Re-cliquez sur Activer SUR CET appareil avec CE compte.${who}`, variant: "error" });
-    } else if (r.sent > 0) {
-      toast({ title: `Envoye a ${r.sent} appareil(s)`, description: `Verifiez vos notifications dans 1-2 s.${who}`, variant: "success" });
+    if (r.ok) {
+      toast({ title: "Notification envoyee", description: "Elle doit apparaitre dans 1-2 s sur cet appareil.", variant: "success" });
     } else {
-      toast({ title: "Echec d'envoi", description: r.error ?? "Token invalide.", variant: "error" });
+      toast({ title: "Echec d'envoi", description: r.error ?? "Reessayez.", variant: "error" });
     }
   }
 

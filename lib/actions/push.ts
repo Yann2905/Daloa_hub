@@ -1,19 +1,30 @@
 "use server";
 
+import { z } from "zod";
 import { getUser } from "@/lib/auth";
 import { sql } from "@/lib/db";
-import { pushUserResult, type PushResult } from "@/lib/push";
+import { pushToToken } from "@/lib/push";
 
-/** Envoie une notification de test a l'utilisateur courant et retourne le diagnostic. */
-export async function sendTestPush(): Promise<PushResult> {
+/**
+ * Envoie une notification de test DIRECTEMENT au token de l'appareil courant.
+ * Enregistre aussi le token (au cas ou) pour les vraies notifications.
+ */
+export async function sendTestPushToToken(
+  token: string,
+): Promise<{ ok: boolean; error?: string }> {
   const user = await getUser();
-  if (!user) return { configured: false, tokens: 0, sent: 0, failed: 0, error: "Non connecte." };
+  if (!user) return { ok: false, error: "Non connecte." };
+  if (!z.string().min(20).safeParse(token).success) return { ok: false, error: "Token invalide." };
 
-  const [u] = await sql<{ email: string }[]>`select email from users where id = ${user.id}`;
-  const r = await pushUserResult(user.id, {
+  // (Re)associe le token a ce compte pour que les vraies notifs marchent aussi.
+  await sql`
+    insert into fcm_tokens (token, user_id) values (${token}, ${user.id})
+    on conflict (token) do update set user_id = excluded.user_id, created_at = now()
+  `;
+
+  return pushToToken(token, {
     title: "Test DALOA HUB",
-    body: "Si vous voyez ceci, les notifications fonctionnent !",
+    body: "Vos notifications fonctionnent !",
     url: "/",
   });
-  return { ...r, who: u?.email ?? user.id };
 }

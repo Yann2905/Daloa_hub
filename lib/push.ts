@@ -98,6 +98,32 @@ export async function pushUserResult(
   }
 }
 
+/** Envoi direct a un token precis (pour le bouton de test). */
+export async function pushToToken(
+  token: string,
+  payload: { title: string; body: string; url?: string },
+): Promise<{ ok: boolean; error?: string }> {
+  if (!isPushServerConfigured()) return { ok: false, error: "Firebase serveur non configure sur Vercel." };
+  try {
+    const messaging = await getMessaging();
+    if (!messaging) return { ok: false, error: "Init Firebase impossible." };
+    const url = payload.url ?? "/";
+    await messaging.send({
+      token,
+      notification: { title: payload.title, body: payload.body },
+      data: { url },
+      webpush: {
+        notification: { title: payload.title, body: payload.body, icon: "/icons/icon.svg", badge: "/icons/icon.svg" },
+        fcmOptions: { link: url },
+        headers: { Urgency: "high", TTL: "86400" },
+      },
+    });
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Erreur d'envoi." };
+  }
+}
+
 /** Envoi best-effort (ne casse jamais l'action metier). */
 export async function pushUser(
   userId: string,
