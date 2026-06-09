@@ -5,6 +5,22 @@ import { sql } from "@/lib/db";
  * Notifications push via Firebase Cloud Messaging (FCM).
  * Necessite FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.
  */
+/** URL de base absolue de l'app (pour que le clic sur la notif ouvre la page). */
+function appBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_APP_URL;
+  if (fromEnv && fromEnv.startsWith("http")) return fromEnv.replace(/\/$/, "");
+  const host = process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL;
+  if (host) return `https://${host}`;
+  return "https://daloa-hub.vercel.app";
+}
+
+/** Rend une URL absolue (FCM exige un lien absolu pour le clic). */
+function absoluteLink(url?: string): string {
+  const u = url ?? "/";
+  if (u.startsWith("http")) return u;
+  return `${appBaseUrl()}${u.startsWith("/") ? u : `/${u}`}`;
+}
+
 export function isPushServerConfigured(): boolean {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) return true;
   return !!(
@@ -76,14 +92,14 @@ export async function pushUserResult(
       return { configured: true, tokens: 0, sent: 0, failed: 0, error: "Aucun appareil enregistre (activez les notifications sur l'appareil)." };
     }
     const tokens = rows.map((r) => r.token);
-    const url = payload.url ?? "/";
+    const link = absoluteLink(payload.url);
 
     // Message "notification" : affiche automatiquement par FCM (le plus fiable
     // sur le web, pas de dependance a onBackgroundMessage). Le clic ouvre le lien.
     const resp = await messaging.sendEachForMulticast({
       tokens,
       notification: { title: payload.title, body: payload.body },
-      data: { url },
+      data: { url: link },
       webpush: {
         notification: {
           title: payload.title,
@@ -91,7 +107,7 @@ export async function pushUserResult(
           icon: "/icons/icon.svg",
           badge: "/icons/icon.svg",
         },
-        fcmOptions: { link: url },
+        fcmOptions: { link },
         headers: { Urgency: "high", TTL: "86400" },
       },
     });
@@ -130,14 +146,14 @@ export async function pushToToken(
   try {
     const messaging = await getMessaging();
     if (!messaging) return { ok: false, error: "Init Firebase impossible." };
-    const url = payload.url ?? "/";
+    const link = absoluteLink(payload.url);
     await messaging.send({
       token,
       notification: { title: payload.title, body: payload.body },
-      data: { url },
+      data: { url: link },
       webpush: {
         notification: { title: payload.title, body: payload.body, icon: "/icons/icon.svg", badge: "/icons/icon.svg" },
-        fcmOptions: { link: url },
+        fcmOptions: { link },
         headers: { Urgency: "high", TTL: "86400" },
       },
     });
