@@ -12,7 +12,7 @@ export default function StoreLayout({
     <CartProvider>
       <div className="flex min-h-dvh flex-col">
         <SiteHeader />
-        <main className="flex-1 pb-4">{children}</main>
+        <main className="bg-mesh flex-1 pb-4">{children}</main>
         <SiteFooter />
         <BottomNav />
       </div>

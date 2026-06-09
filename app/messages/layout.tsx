@@ -17,7 +17,7 @@ export default async function MessagesLayout({
   const conversations = await listMyConversations();
 
   return (
-    <div className="mx-auto flex h-dvh max-w-5xl bg-secondary">
+    <div className="flex h-dvh w-full bg-secondary">
       <PushRegister />
       {/* Liste (panneau gauche) : visible sur desktop uniquement */}
       <aside className="hidden w-[340px] shrink-0 flex-col border-r bg-card lg:flex">
