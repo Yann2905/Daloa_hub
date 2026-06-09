@@ -7,6 +7,7 @@ import {
   listMessages,
   getConversationHeader,
 } from "@/lib/queries/chat";
+import { sql } from "@/lib/db";
 import { initials } from "@/lib/utils";
 import { ChatThread } from "@/components/chat/chat-thread";
 
@@ -21,6 +22,12 @@ export default async function ConversationPage({
   const { id } = await params;
   const part = await getParticipation(id);
   if (!part) notFound();
+
+  // Marque immediatement les messages recus comme lus (efface le compteur)
+  await sql`
+    update messages set read_at = now()
+    where conversation_id = ${id} and sender_id <> ${part.userId} and read_at is null
+  `;
 
   const [messages, header] = await Promise.all([
     listMessages(id),

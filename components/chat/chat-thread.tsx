@@ -77,6 +77,7 @@ export function ChatThread({
         /* ignore */
       }
     };
+    load(); // immediat : marque les messages comme lus des l'ouverture
     const id = setInterval(load, 4000);
     return () => {
       active = false;
