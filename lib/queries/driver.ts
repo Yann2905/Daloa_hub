@@ -17,7 +17,13 @@ export async function getMyDriver(): Promise<Driver | null> {
 
 export interface DeliveryRow extends Order {
   order_items: Pick<OrderItem, "id" | "name" | "quantity">[];
-  profiles: { phone: string | null } | null;
+  client: { full_name: string; phone: string | null } | null;
+  shop: {
+    name: string;
+    address: string | null;
+    lat: number | null;
+    lng: number | null;
+  } | null;
 }
 
 export async function listDriverDeliveries(
@@ -31,22 +37,42 @@ export async function listDriverDeliveries(
     return await sql<DeliveryRow[]>`
       select
         o.id, o.code, o.client_id, o.vendor_id, o.driver_id, o.status,
-        o.delivery_type, o.subtotal::float8 as subtotal,
+        o.delivery_type, o.fulfillment_type, o.subtotal::float8 as subtotal,
         o.delivery_fee::float8 as delivery_fee, o.total::float8 as total,
         o.distance_km::float8 as distance_km, o.dest_lat, o.dest_lng,
         o.dest_address, o.refused, o.refusal_reason, o.delivery_fee_paid,
+        o.vendor_settled, o.settled_at,
         o.created_at, o.updated_at, o.confirmed_at, o.delivered_at,
-        json_build_object('phone', u.phone) as profiles,
+        json_build_object('full_name', u.full_name, 'phone', u.phone) as client,
+        json_build_object('name', v.shop_name, 'address', v.address,
+          'lat', v.lat, 'lng', v.lng) as shop,
         coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
           'quantity', oi.quantity)) filter (where oi.id is not null), '[]') as order_items
       from orders o
       join users u on u.id = o.client_id
+      join vendors v on v.id = o.vendor_id
       left join order_items oi on oi.order_id = o.id
       where o.driver_id = ${driverId} ${statusFilter}
-      group by o.id, u.phone
+      group by o.id, u.full_name, u.phone, v.shop_name, v.address, v.lat, v.lng
       order by o.created_at desc
     `;
   } catch {
     return [];
+  }
+}
+
+/** Cash que le livreur doit reverser aux vendeurs (livre, non regle). */
+export async function getDriverCashDue(driverId: string): Promise<number> {
+  try {
+    const [r] = await sql<{ due: number }[]>`
+      select coalesce(sum(subtotal) filter (
+        where status = 'delivered' and not refused and not vendor_settled
+          and fulfillment_type = 'delivery'
+      ), 0)::float8 as due
+      from orders where driver_id = ${driverId}
+    `;
+    return r?.due ?? 0;
+  } catch {
+    return 0;
   }
 }

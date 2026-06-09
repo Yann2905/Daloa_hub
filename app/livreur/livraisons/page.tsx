@@ -1,6 +1,7 @@
 import { getMyDriver, listDriverDeliveries } from "@/lib/queries/driver";
 import { DeliveryCard } from "@/components/driver/delivery-card";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Livraisons" };
 
 export default async function DriverDeliveriesPage() {
@@ -26,21 +27,7 @@ export default async function DriverDeliveriesPage() {
       ) : (
         <div className="space-y-3">
           {deliveries.map((o) => (
-            <DeliveryCard
-              key={o.id}
-              order={{
-                id: o.id,
-                code: o.code,
-                status: o.status,
-                total: o.total,
-                delivery_fee: o.delivery_fee,
-                dest_address: o.dest_address,
-                dest_lat: o.dest_lat,
-                dest_lng: o.dest_lng,
-                items: o.order_items.map((it) => `${it.quantity}x ${it.name}`).join(", "),
-                clientPhone: o.profiles?.phone ?? null,
-              }}
-            />
+            <DeliveryCard key={o.id} order={o} />
           ))}
         </div>
       )}

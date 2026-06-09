@@ -1,6 +1,11 @@
 import Link from "next/link";
-import { Clock, XCircle, Star, Truck } from "lucide-react";
-import { getMyDriver, listDriverDeliveries } from "@/lib/queries/driver";
+import { Clock, XCircle, Star, Truck, Wallet } from "lucide-react";
+import {
+  getMyDriver,
+  listDriverDeliveries,
+  getDriverCashDue,
+} from "@/lib/queries/driver";
+import { formatFcfa } from "@/lib/utils";
 import { DRIVER_STATUS_LABELS } from "@/lib/constants";
 import { AvailabilityToggle } from "@/components/driver/availability-toggle";
 import { DeliveryCard } from "@/components/driver/delivery-card";
@@ -38,7 +43,10 @@ export default async function DriverDashboard() {
     );
   }
 
-  const active = await listDriverDeliveries(driver.id, { activeOnly: true });
+  const [active, cashDue] = await Promise.all([
+    listDriverDeliveries(driver.id, { activeOnly: true }),
+    getDriverCashDue(driver.id),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -50,8 +58,15 @@ export default async function DriverDashboard() {
 
       <AvailabilityToggle initial={driver.is_available} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
         <StatCard label="Livraisons en cours" value={active.length} icon={Truck} />
+        <StatCard
+          label="A remettre aux vendeurs"
+          value={formatFcfa(cashDue)}
+          icon={Wallet}
+          tone="blue"
+          hint="cash encaisse, non reverse"
+        />
         <StatCard
           label="Note moyenne"
           value={driver.rating_count > 0 ? driver.rating_avg.toFixed(1) : "-"}
@@ -67,23 +82,7 @@ export default async function DriverDashboard() {
             Aucune livraison en cours. Restez en ligne pour en recevoir.
           </p>
         ) : (
-          active.map((o) => (
-            <DeliveryCard
-              key={o.id}
-              order={{
-                id: o.id,
-                code: o.code,
-                status: o.status,
-                total: o.total,
-                delivery_fee: o.delivery_fee,
-                dest_address: o.dest_address,
-                dest_lat: o.dest_lat,
-                dest_lng: o.dest_lng,
-                items: o.order_items.map((it) => `${it.quantity}x ${it.name}`).join(", "),
-                clientPhone: o.profiles?.phone ?? null,
-              }}
-            />
-          ))
+          active.map((o) => <DeliveryCard key={o.id} order={o} />)
         )}
       </div>
     </div>

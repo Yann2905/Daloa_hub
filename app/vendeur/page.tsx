@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, ShoppingBag, Clock, Wallet, AlertTriangle, Star } from "lucide-react";
+import { Package, ShoppingBag, Clock, Wallet, AlertTriangle, Star, MapPin } from "lucide-react";
 import {
   getMyVendor,
   getVendorStats,
@@ -42,6 +42,24 @@ export default async function VendorDashboard() {
           </div>
           <Button asChild>
             <Link href="/vendeur/abonnement">Renouveler (1000 FCFA)</Link>
+          </Button>
+        </div>
+      )}
+
+      {vendor.lat == null && (
+        <div className="flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2">
+            <MapPin className="mt-0.5 size-5 text-amber-600" />
+            <div>
+              <p className="font-medium text-amber-800">Position de la boutique requise</p>
+              <p className="text-sm text-amber-700">
+                Tant que la position n&apos;est pas definie, vos produits sont masques et
+                les livreurs ne peuvent pas vous trouver.
+              </p>
+            </div>
+          </div>
+          <Button asChild>
+            <Link href="/vendeur/boutique">Definir la position</Link>
           </Button>
         </div>
       )}

@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation";
-import { MapPin, Package, Store } from "lucide-react";
+import Image from "next/image";
+import { MapPin, Package, Store, Phone, Truck } from "lucide-react";
+import { TrackMapLoader } from "@/components/order/track-map-loader";
 import { requireUser } from "@/lib/auth";
 import { getOrder } from "@/lib/queries/orders";
 import { sql } from "@/lib/db";
-import { formatFcfa, formatDateTime } from "@/lib/utils";
+import { formatFcfa, formatDateTime, initials } from "@/lib/utils";
 import {
   ORDER_STATUS_LABELS,
   DELIVERY_TYPE_LABELS,
@@ -125,6 +127,48 @@ export default async function OrderDetailPage({
           </>
         )}
       </section>
+
+      {/* Votre livreur + suivi en direct */}
+      {order.drivers && order.fulfillment_type === "delivery" && (
+        <section className="space-y-3 rounded-lg border bg-card p-4">
+          <h2 className="flex items-center gap-2 font-semibold">
+            <Truck className="size-4 text-primary" /> Votre livreur
+          </h2>
+          <div className="flex items-center gap-3">
+            {order.drivers.avatar_url ? (
+              <Image
+                src={order.drivers.avatar_url}
+                alt={order.drivers.full_name ?? "Livreur"}
+                width={48}
+                height={48}
+                className="size-12 rounded-full object-cover ring-2 ring-border"
+              />
+            ) : (
+              <span className="flex size-12 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white">
+                {initials(order.drivers.full_name ?? "L")}
+              </span>
+            )}
+            <div className="flex-1">
+              <p className="font-medium">{order.drivers.full_name}</p>
+              <p className="text-xs text-muted-foreground">Livreur DALOA HUB</p>
+            </div>
+            {order.drivers.phone && (
+              <a
+                href={`tel:${order.drivers.phone}`}
+                className="flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm font-medium text-accent hover:border-accent"
+              >
+                <Phone className="size-4" /> Appeler
+              </a>
+            )}
+          </div>
+          {order.status === "delivering" && order.dest_lat != null && order.dest_lng != null && (
+            <TrackMapLoader
+              orderId={order.id}
+              dest={{ lat: order.dest_lat, lng: order.dest_lng }}
+            />
+          )}
+        </section>
+      )}
 
       {/* Suivi */}
       <section className="rounded-lg border bg-card p-4">

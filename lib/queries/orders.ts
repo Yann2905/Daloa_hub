@@ -40,7 +40,13 @@ export async function listMyOrders(): Promise<OrderListRow[]> {
 
 export interface OrderDetail extends Order {
   vendors: { id: string; shop_name: string; user_id: string } | null;
-  drivers: { id: string; user_id: string } | null;
+  drivers: {
+    id: string;
+    user_id: string;
+    full_name: string | null;
+    phone: string | null;
+    avatar_url: string | null;
+  } | null;
   order_items: OrderItem[];
   order_status_history: OrderStatusHistory[];
 }
@@ -52,7 +58,9 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
         json_build_object('id', v.id, 'shop_name', v.shop_name,
           'user_id', v.user_id) as vendors,
         case when d.id is not null
-          then json_build_object('id', d.id, 'user_id', d.user_id) end as drivers,
+          then json_build_object('id', d.id, 'user_id', d.user_id,
+            'full_name', du.full_name, 'phone', du.phone,
+            'avatar_url', du.avatar_url) end as drivers,
         coalesce((
           select json_agg(json_build_object('id', oi.id, 'order_id', oi.order_id,
             'product_id', oi.product_id, 'name', oi.name,
@@ -67,6 +75,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
       from orders o
       join vendors v on v.id = o.vendor_id
       left join drivers d on d.id = o.driver_id
+      left join users du on du.id = d.user_id
       where o.id = ${id}
       limit 1
     `;
