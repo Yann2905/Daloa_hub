@@ -50,6 +50,14 @@ export async function checkout(payload: unknown): Promise<ActionState> {
   const user = await getUser();
   if (!user) return { error: "Vous devez etre connecte pour commander." };
 
+  // Garde-fou : compte suspendu (meme si la session date d'avant la suspension).
+  const [acc] = await sql<{ account_status: string }[]>`
+    select account_status from users where id = ${user.id} limit 1
+  `;
+  if (!acc || acc.account_status === "suspended") {
+    return { error: "Votre compte est suspendu. Vous ne pouvez pas commander." };
+  }
+
   if (!isPickup && (!destAddress || destAddress.trim().length < 3)) {
     return { error: "Indiquez votre quartier pour la livraison." };
   }

@@ -1,6 +1,9 @@
 /* DALOA HUB - Service Worker Firebase Cloud Messaging
- * La config Firebase (publique) est passee en parametres d'URL lors de
+ * La config Firebase (publique) est passee en parametres d'URL a
  * l'enregistrement (les SW ne lisent pas les variables d'environnement).
+ *
+ * On laisse FCM afficher automatiquement les messages "notification" et gerer
+ * le clic via webpush.fcmOptions.link (le plus fiable sur le web).
  */
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js");
 importScripts("https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js");
@@ -16,38 +19,7 @@ const config = {
 
 if (config.apiKey && config.projectId) {
   firebase.initializeApp(config);
-  const messaging = firebase.messaging();
-
-  // Message (data-only) recu en arriere-plan : on construit la notification.
-  messaging.onBackgroundMessage((payload) => {
-    const d = (payload && payload.data) || {};
-    self.registration.showNotification(d.title || "DALOA HUB", {
-      body: d.body || "",
-      icon: "/icons/icon.svg",
-      badge: "/icons/icon.svg",
-      data: { url: d.url || "/" },
-      vibrate: [80, 40, 80],
-    });
-  });
+  // Initialise la messagerie : FCM affiche les notifications en arriere-plan
+  // et gere le clic (ouverture du lien) automatiquement.
+  firebase.messaging();
 }
-
-// Clic sur la notification -> ouvre/active la page correspondante.
-// Si la page est protegee et que l'utilisateur n'est pas connecte, le
-// middleware le redirige automatiquement vers /login.
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clients) => {
-        for (const client of clients) {
-          if ("focus" in client) {
-            client.navigate(url);
-            return client.focus();
-          }
-        }
-        return self.clients.openWindow(url);
-      }),
-  );
-});

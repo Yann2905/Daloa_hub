@@ -55,14 +55,21 @@ export async function pushUserResult(
     const tokens = rows.map((r) => r.token);
     const url = payload.url ?? "/";
 
-    // Message DATA-only : la notification est construite par le service worker
-    // (fiable en arriere-plan, evite les doublons et le bug d'affichage web).
+    // Message "notification" : affiche automatiquement par FCM (le plus fiable
+    // sur le web, pas de dependance a onBackgroundMessage). Le clic ouvre le lien.
     const resp = await messaging.sendEachForMulticast({
       tokens,
-      data: { title: payload.title, body: payload.body, url },
+      notification: { title: payload.title, body: payload.body },
+      data: { url },
       webpush: {
+        notification: {
+          title: payload.title,
+          body: payload.body,
+          icon: "/icons/icon.svg",
+          badge: "/icons/icon.svg",
+        },
         fcmOptions: { link: url },
-        headers: { Urgency: "high" },
+        headers: { Urgency: "high", TTL: "86400" },
       },
     });
 

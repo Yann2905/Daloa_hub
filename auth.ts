@@ -50,6 +50,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const ok = await verifyPassword(password, user.password_hash);
         if (!ok) return null;
 
+        // Compte suspendu : connexion refusee.
+        if (user.account_status === "suspended") return null;
+
         return {
           id: user.id,
           email: user.email,
