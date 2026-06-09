@@ -21,7 +21,7 @@ export async function getProfile(): Promise<Profile | null> {
   if (!session?.user?.id) return null;
   const rows = await sql<Profile[]>`
     select id, role, full_name, email, phone, avatar_url, address,
-           lat, lng, account_status, created_at, updated_at
+           lat, lng, account_status, email_verified, created_at, updated_at
     from users where id = ${session.user.id} limit 1
   `;
   return rows[0] ?? null;

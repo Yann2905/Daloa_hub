@@ -4,6 +4,7 @@ import { getProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { initials } from "@/lib/utils";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { VerifyBanner } from "@/components/auth/verify-banner";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
@@ -21,6 +22,7 @@ export default async function AccountPage() {
 
   return (
     <div className="container max-w-2xl space-y-6 py-6">
+      {!profile.email_verified && <VerifyBanner />}
       <div className="flex items-center gap-4">
         <span className="flex size-16 items-center justify-center rounded-full bg-brand-green text-xl font-bold text-white">
           {initials(profile.full_name)}

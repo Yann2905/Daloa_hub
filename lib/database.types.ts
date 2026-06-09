@@ -46,6 +46,7 @@ export interface Profile {
   lat: number | null;
   lng: number | null;
   account_status: AccountStatus;
+  email_verified: boolean;
   created_at: string;
   updated_at: string;
 }

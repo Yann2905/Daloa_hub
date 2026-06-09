@@ -60,8 +60,18 @@ create table if not exists users (
   lat            double precision,
   lng            double precision,
   account_status account_status not null default 'active',
+  email_verified boolean not null default false,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
+);
+
+-- Jetons a usage unique (verification email, reinitialisation mot de passe)
+create table if not exists email_tokens (
+  token_hash text primary key,
+  user_id    uuid not null references users(id) on delete cascade,
+  purpose    text not null,
+  expires_at timestamptz not null,
+  created_at timestamptz not null default now()
 );
 create index if not exists idx_users_role on users(role);
 create index if not exists idx_users_status on users(account_status);

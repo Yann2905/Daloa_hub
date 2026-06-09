@@ -59,7 +59,7 @@ export async function listUsers(
 ): Promise<Profile[]> {
   return await sql<Profile[]>`
     select id, role, full_name, email, phone, avatar_url, address,
-           lat, lng, account_status, created_at, updated_at
+           lat, lng, account_status, email_verified, created_at, updated_at
     from users
     where 1 = 1
       ${opts.role ? sql`and role = ${opts.role}::user_role` : sql``}
@@ -285,7 +285,7 @@ export async function getUserFull(userId: string): Promise<UserFull | null> {
 async function getUserFullUnsafe(userId: string): Promise<UserFull | null> {
   const [profile] = await sql<Profile[]>`
     select id, role, full_name, email, phone, avatar_url, address, lat, lng,
-           account_status, created_at, updated_at
+           account_status, email_verified, created_at, updated_at
     from users where id = ${userId} limit 1
   `;
   if (!profile) return null;

@@ -89,8 +89,15 @@ function wrapHtml(title: string, content: string): string {
   </div></body></html>`;
 }
 
-export function orderEmailButton(orderId: string, label: string): string {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://daloa-hub.vercel.app";
-  return `<p style="margin:20px 0"><a href="${base}/commandes/${orderId}"
+export function appBaseUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL ?? "https://daloa-hub.vercel.app";
+}
+
+export function emailButton(url: string, label: string): string {
+  return `<p style="margin:20px 0"><a href="${url}"
     style="background:#00A651;color:#fff;text-decoration:none;padding:12px 20px;border-radius:8px;display:inline-block;font-weight:bold">${label}</a></p>`;
+}
+
+export function orderEmailButton(orderId: string, label: string): string {
+  return emailButton(`${appBaseUrl()}/commandes/${orderId}`, label);
 }

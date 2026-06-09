@@ -2,13 +2,19 @@
 
 import { useActionState, useState } from "react";
 import Link from "next/link";
-import { Mail, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle2 } from "lucide-react";
 import { signIn, type ActionResult } from "@/lib/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SubmitButton } from "@/components/ui/submit-button";
 
-export function LoginForm({ redirectTo }: { redirectTo?: string }) {
+export function LoginForm({
+  redirectTo,
+  resetDone,
+}: {
+  redirectTo?: string;
+  resetDone?: boolean;
+}) {
   const [state, formAction] = useActionState<ActionResult, FormData>(signIn, {});
   const [showPwd, setShowPwd] = useState(false);
 
@@ -22,6 +28,12 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       </div>
 
       {redirectTo && <input type="hidden" name="redirect" value={redirectTo} />}
+
+      {resetDone && (
+        <div className="flex items-center gap-2 rounded-lg bg-primary/10 px-3 py-2 text-sm text-primary">
+          <CheckCircle2 className="size-4 shrink-0" /> Mot de passe reinitialise. Connectez-vous.
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="email">Adresse e-mail</Label>
@@ -40,7 +52,12 @@ export function LoginForm({ redirectTo }: { redirectTo?: string }) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="password">Mot de passe</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password">Mot de passe</Label>
+          <Link href="/mot-de-passe-oublie" className="text-xs font-medium text-primary hover:underline">
+            Oublie ?
+          </Link>
+        </div>
         <div className="relative">
           <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
