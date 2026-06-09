@@ -22,7 +22,7 @@ export default async function ShopPage({
 
   if (!vendor || vendor.status !== "approved") notFound();
 
-  const products = await listProducts({ vendorId: id });
+  const { products } = await listProducts({ vendorId: id, pageSize: 48 });
 
   return (
     <div className="container space-y-6 py-6">

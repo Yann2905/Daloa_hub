@@ -5,20 +5,27 @@ import { formatFcfa, formatDateTime } from "@/lib/utils";
 import { ORDER_STATUSES, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
 import { AdminSearch } from "@/components/admin/admin-search";
+import { Pagination } from "@/components/ui/pagination";
 import type { OrderStatus } from "@/lib/database.types";
+import type { AdminOrderRow } from "@/lib/queries/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Commandes" };
+const PAGE_SIZE = 25;
 
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{ status?: string; q?: string; page?: string }>;
 }) {
-  const { status, q } = await searchParams;
-  let orders: Awaited<ReturnType<typeof listAllOrders>> = [];
+  const { status, q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam ?? 1) || 1);
+  let orders: AdminOrderRow[] = [];
+  let total = 0;
   try {
-    orders = await listAllOrders({ status, q });
+    const res = await listAllOrders({ status, q, page, pageSize: PAGE_SIZE });
+    orders = res.orders;
+    total = res.total;
   } catch {
     orders = [];
   }
@@ -82,6 +89,8 @@ export default async function AdminOrdersPage({
           </p>
         )}
       </div>
+
+      <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} />
     </div>
   );
 }

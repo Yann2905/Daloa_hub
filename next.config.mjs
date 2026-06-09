@@ -37,4 +37,21 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+// Sentry : actif uniquement si un DSN est configure (sinon build inchange).
+const sentryEnabled = !!(
+  process.env.NEXT_PUBLIC_SENTRY_DSN || process.env.SENTRY_DSN
+);
+
+let finalConfig = nextConfig;
+if (sentryEnabled) {
+  const { withSentryConfig } = await import("@sentry/nextjs");
+  finalConfig = withSentryConfig(nextConfig, {
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+    authToken: process.env.SENTRY_AUTH_TOKEN,
+    widenClientFileUpload: true,
+  });
+}
+
+export default finalConfig;

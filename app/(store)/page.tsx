@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const products = await listProducts({ inStock: true, limit: 12 });
+  const { products } = await listProducts({ inStock: true, pageSize: 12 });
 
   return (
     <div className="container space-y-10 py-6">

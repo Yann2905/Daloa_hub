@@ -5,20 +5,27 @@ import { listAllProducts } from "@/lib/queries/admin";
 import { formatFcfa } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { AdminSearch } from "@/components/admin/admin-search";
+import { Pagination } from "@/components/ui/pagination";
 import { ProductActiveToggle } from "@/components/admin/admin-actions";
+import type { AdminProductRow } from "@/lib/queries/admin";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Produits" };
+const PAGE_SIZE = 25;
 
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; page?: string }>;
 }) {
-  const { q } = await searchParams;
-  let products: Awaited<ReturnType<typeof listAllProducts>> = [];
+  const { q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam ?? 1) || 1);
+  let products: AdminProductRow[] = [];
+  let total = 0;
   try {
-    products = await listAllProducts({ q });
+    const res = await listAllProducts({ q, page, pageSize: PAGE_SIZE });
+    products = res.products;
+    total = res.total;
   } catch {
     products = [];
   }
@@ -74,6 +81,8 @@ export default async function AdminProductsPage({
           </p>
         )}
       </div>
+
+      <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} />
     </div>
   );
 }

@@ -15,6 +15,7 @@ export function AdminSearch({ placeholder = "Rechercher..." }: { placeholder?: s
   useEffect(() => {
     const t = setTimeout(() => {
       const next = new URLSearchParams(params.toString());
+      next.delete("page");
       if (q) next.set("q", q);
       else next.delete("q");
       if ((params.get("q") ?? "") !== q) {

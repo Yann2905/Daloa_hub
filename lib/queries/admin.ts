@@ -55,17 +55,22 @@ export async function getDailySeries(days = 14): Promise<DailyPoint[]> {
 // ---------------- Listes administrateur ----------------
 
 export async function listUsers(
-  opts: { role?: string; q?: string } = {},
-): Promise<Profile[]> {
-  return await sql<Profile[]>`
+  opts: { role?: string; q?: string; page?: number; pageSize?: number } = {},
+): Promise<{ users: Profile[]; total: number }> {
+  const pageSize = opts.pageSize ?? 25;
+  const offset = (Math.max(1, opts.page ?? 1) - 1) * pageSize;
+  const rows = await sql<(Profile & { total: number })[]>`
     select id, role, full_name, email, phone, avatar_url, address,
-           lat, lng, account_status, email_verified, created_at, updated_at
+           lat, lng, account_status, email_verified, created_at, updated_at,
+           count(*) over() as total
     from users
     where 1 = 1
       ${opts.role ? sql`and role = ${opts.role}::user_role` : sql``}
       ${opts.q ? sql`and (full_name ilike ${"%" + opts.q + "%"} or email ilike ${"%" + opts.q + "%"} or phone ilike ${"%" + opts.q + "%"})` : sql``}
-    order by created_at desc limit 200
+    order by created_at desc limit ${pageSize} offset ${offset}
   `;
+  const total = rows[0] ? Number(rows[0].total) : 0;
+  return { users: rows as unknown as Profile[], total };
 }
 
 export interface DriverAdminRow extends Driver {
@@ -221,11 +226,15 @@ export interface AdminOrderRow {
 export async function listAllOrders(opts: {
   status?: string;
   q?: string;
-  limit?: number;
-} = {}): Promise<AdminOrderRow[]> {
-  return await sql<AdminOrderRow[]>`
-    select o.id, o.code, o.status, o.fulfillment_type, o.total::float8 as total,
-           o.created_at, u.full_name as client_name, v.shop_name
+  page?: number;
+  pageSize?: number;
+} = {}): Promise<{ orders: AdminOrderRow[]; total: number }> {
+  const pageSize = opts.pageSize ?? 25;
+  const offset = (Math.max(1, opts.page ?? 1) - 1) * pageSize;
+  const rows = await sql<(AdminOrderRow & { total: number })[]>`
+    select o.id, o.code, o.status, o.fulfillment_type, o.total::float8 as total_amount,
+           o.created_at, u.full_name as client_name, v.shop_name,
+           count(*) over() as total
     from orders o
     join users u on u.id = o.client_id
     join vendors v on v.id = o.vendor_id
@@ -233,8 +242,20 @@ export async function listAllOrders(opts: {
       ${opts.status ? sql`and o.status = ${opts.status}::order_status` : sql``}
       ${opts.q ? sql`and (o.code ilike ${"%" + opts.q + "%"} or u.full_name ilike ${"%" + opts.q + "%"})` : sql``}
     order by o.created_at desc
-    limit ${opts.limit ?? 100}
+    limit ${pageSize} offset ${offset}
   `;
+  const total = rows[0] ? Number(rows[0].total) : 0;
+  const orders = rows.map((r) => ({
+    id: r.id,
+    code: r.code,
+    status: r.status,
+    fulfillment_type: r.fulfillment_type,
+    total: (r as unknown as { total_amount: number }).total_amount,
+    created_at: r.created_at,
+    client_name: r.client_name,
+    shop_name: r.shop_name,
+  }));
+  return { orders, total };
 }
 
 // ---------------- Moderation produits ----------------
@@ -250,18 +271,25 @@ export interface AdminProductRow {
   image_url: string | null;
 }
 
-export async function listAllProducts(opts: { q?: string } = {}): Promise<AdminProductRow[]> {
-  return await sql<AdminProductRow[]>`
+export async function listAllProducts(
+  opts: { q?: string; page?: number; pageSize?: number } = {},
+): Promise<{ products: AdminProductRow[]; total: number }> {
+  const pageSize = opts.pageSize ?? 25;
+  const offset = (Math.max(1, opts.page ?? 1) - 1) * pageSize;
+  const rows = await sql<(AdminProductRow & { total: number })[]>`
     select p.id, p.name, p.price::float8 as price, p.stock, p.is_active,
            v.shop_name, p.vendor_id,
            (select pi.url from product_images pi where pi.product_id = p.id
-            order by pi.position limit 1) as image_url
+            order by pi.position limit 1) as image_url,
+           count(*) over() as total
     from products p
     join vendors v on v.id = p.vendor_id
     ${opts.q ? sql`where p.name ilike ${"%" + opts.q + "%"}` : sql``}
     order by p.created_at desc
-    limit 200
+    limit ${pageSize} offset ${offset}
   `;
+  const total = rows[0] ? Number(rows[0].total) : 0;
+  return { products: rows as unknown as AdminProductRow[], total };
 }
 
 // ---------------- Fiche utilisateur complete ----------------

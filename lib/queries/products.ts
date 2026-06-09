@@ -11,6 +11,8 @@ export interface ProductFilters {
   vendorId?: string;
   sort?: "recent" | "price_asc" | "price_desc";
   limit?: number;
+  page?: number;
+  pageSize?: number;
 }
 
 // Selection commune : produit + images (json) + categorie + boutique
@@ -27,13 +29,22 @@ const PRODUCT_SELECT = sql`
   case when c.id is not null
     then json_build_object('slug', c.slug, 'name', c.name) end as categories,
   json_build_object('id', v.id, 'shop_name', v.shop_name,
-    'rating_avg', v.rating_avg::float8) as vendors
+    'rating_avg', v.rating_avg::float8) as vendors,
+  count(*) over() as total_count
 `;
+
+export interface ProductPage {
+  products: ProductWithImages[];
+  total: number;
+}
 
 export async function listProducts(
   filters: ProductFilters = {},
-): Promise<ProductWithImages[]> {
+): Promise<ProductPage> {
   try {
+    const pageSize = filters.pageSize ?? filters.limit ?? 24;
+    const page = Math.max(1, filters.page ?? 1);
+    const offset = (page - 1) * pageSize;
     // Conditions optionnelles interpolees directement (un seul niveau de
     // fragment) : la composition imbriquee n'est pas supportee par postgres.
     const order =
@@ -43,7 +54,7 @@ export async function listProducts(
           ? sql`order by p.price desc`
           : sql`order by p.created_at desc`;
 
-    const rows = await sql<ProductWithImages[]>`
+    const rows = await sql<(ProductWithImages & { total_count: number })[]>`
       select ${PRODUCT_SELECT}
       from products p
       join vendors v on v.id = p.vendor_id
@@ -58,12 +69,17 @@ export async function listProducts(
         ${filters.inStock ? sql`and p.stock > 0` : sql``}
       group by p.id, c.id, v.id
       ${order}
-      limit ${filters.limit ?? 60}
+      limit ${pageSize} offset ${offset}
     `;
-    return rows;
+    const total = rows[0] ? Number(rows[0].total_count) : 0;
+    const products = rows.map(({ total_count, ...p }) => {
+      void total_count;
+      return p as ProductWithImages;
+    });
+    return { products, total };
   } catch (e) {
     console.error("listProducts:", e);
-    return [];
+    return { products: [], total: 0 };
   }
 }
 

@@ -4,9 +4,12 @@ import { listUsers } from "@/lib/queries/admin";
 import { formatDate, initials } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { AdminSearch } from "@/components/admin/admin-search";
+import { Pagination } from "@/components/ui/pagination";
 import type { Profile } from "@/lib/database.types";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "Utilisateurs" };
+const PAGE_SIZE = 25;
 
 const ROLE_LABELS: Record<string, string> = {
   client: "Client",
@@ -25,12 +28,16 @@ const ROLE_FILTERS = [
 export default async function AdminUsersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ role?: string; q?: string }>;
+  searchParams: Promise<{ role?: string; q?: string; page?: string }>;
 }) {
-  const { role, q } = await searchParams;
+  const { role, q, page: pageParam } = await searchParams;
+  const page = Math.max(1, Number(pageParam ?? 1) || 1);
   let users: Profile[] = [];
+  let total = 0;
   try {
-    users = await listUsers({ role, q });
+    const res = await listUsers({ role, q, page, pageSize: PAGE_SIZE });
+    users = res.users;
+    total = res.total;
   } catch {
     users = [];
   }
@@ -92,6 +99,8 @@ export default async function AdminUsersPage({
           </p>
         )}
       </div>
+
+      <Pagination page={page} totalPages={Math.ceil(total / PAGE_SIZE)} />
     </div>
   );
 }
