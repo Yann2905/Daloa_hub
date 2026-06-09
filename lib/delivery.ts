@@ -12,7 +12,7 @@ import { isProximity, type LatLng, haversineKm } from "./geo";
  * des articles volumineux ; un drapeau explicite `is_bulky` au niveau produit
  * prime toujours (voir resolveDeliveryType ci-dessous).
  */
-const BULKY_CATEGORIES: CategorySlug[] = ["maison"];
+const BULKY_CATEGORIES: CategorySlug[] = ["meubles", "electromenager", "bricolage"];
 
 export function categoryIsBulky(slug: CategorySlug): boolean {
   return BULKY_CATEGORIES.includes(slug);

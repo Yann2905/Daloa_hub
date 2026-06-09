@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star, Store, ImageOff } from "lucide-react";
+import { Star, Store } from "lucide-react";
 import { getProduct } from "@/lib/queries/products";
 import { formatFcfa } from "@/lib/utils";
 import { AddToCart } from "@/components/product/add-to-cart";
+import { ProductGallery } from "@/components/product/product-gallery";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
 import type { CategorySlug } from "@/lib/constants";
@@ -27,37 +27,8 @@ export default async function ProductDetailPage({
 
   return (
     <div className="container grid gap-8 py-6 md:grid-cols-2">
-      {/* Galerie */}
-      <div className="space-y-3">
-        <div className="relative aspect-square overflow-hidden rounded-2xl border bg-secondary shadow-card">
-          {cover ? (
-            <Image
-              src={cover.url}
-              alt={product.name}
-              fill
-              sizes="(max-width:768px) 100vw, 50vw"
-              className="object-cover"
-              priority
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              <ImageOff className="size-10" />
-            </div>
-          )}
-        </div>
-        {images.length > 1 && (
-          <div className="grid grid-cols-4 gap-2">
-            {images.slice(0, 4).map((img) => (
-              <div
-                key={img.id}
-                className="relative aspect-square overflow-hidden rounded-md border bg-secondary"
-              >
-                <Image src={img.url} alt="" fill sizes="25vw" className="object-cover" />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Galerie defilante */}
+      <ProductGallery images={images} alt={product.name} />
 
       {/* Infos */}
       <div className="space-y-4">

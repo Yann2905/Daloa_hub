@@ -557,9 +557,15 @@ end $$;
 -- 13. DONNEES DE REFERENCE (categories)
 -- -------------------------------------------------------------------------
 insert into categories(slug,name,position) values
-  ('mode','Mode',1),('chaussures','Chaussures',2),('telephones','Telephones',3),
-  ('informatique','Informatique',4),('electronique','Electronique',5),('maison','Maison',6)
-on conflict (slug) do nothing;
+  ('mode','Mode & Vetements',1),('chaussures','Chaussures',2),('beaute','Beaute & Cosmetiques',3),
+  ('bijoux','Bijoux & Montres',4),('sacs','Sacs & Bagagerie',5),('telephones','Telephones & Tablettes',6),
+  ('informatique','Informatique',7),('electronique','Electronique & High-Tech',8),('electromenager','Electromenager',9),
+  ('maison','Maison & Deco',10),('meubles','Meubles',11),('cuisine','Cuisine & Arts de la table',12),
+  ('bebe','Bebe & Enfant',13),('jouets','Jeux & Jouets',14),('sport','Sport & Loisirs',15),
+  ('alimentation','Alimentation & Boissons',16),('sante','Sante & Bien-etre',17),('livres','Livres & Papeterie',18),
+  ('auto','Auto & Moto',19),('bricolage','Bricolage & Jardin',20),('animalerie','Animalerie',21),
+  ('musique','Instruments de musique',22),('art','Art & Artisanat',23)
+on conflict (slug) do update set name=excluded.name, position=excluded.position;
 
 commit;
 

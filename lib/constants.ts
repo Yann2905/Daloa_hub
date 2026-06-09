@@ -27,14 +27,31 @@ export type VendorStatus = (typeof VENDOR_STATUSES)[number];
 export const ACCOUNT_STATUSES = ["active", "suspended"] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
-// --- Categories produits ---
+// --- Categories produits (large eventail, comme une vraie marketplace) ---
 export const CATEGORIES = [
-  { slug: "mode", label: "Mode" },
+  { slug: "mode", label: "Mode & Vetements" },
   { slug: "chaussures", label: "Chaussures" },
-  { slug: "telephones", label: "Telephones" },
+  { slug: "beaute", label: "Beaute & Cosmetiques" },
+  { slug: "bijoux", label: "Bijoux & Montres" },
+  { slug: "sacs", label: "Sacs & Bagagerie" },
+  { slug: "telephones", label: "Telephones & Tablettes" },
   { slug: "informatique", label: "Informatique" },
-  { slug: "electronique", label: "Electronique" },
-  { slug: "maison", label: "Maison" },
+  { slug: "electronique", label: "Electronique & High-Tech" },
+  { slug: "electromenager", label: "Electromenager" },
+  { slug: "maison", label: "Maison & Deco" },
+  { slug: "meubles", label: "Meubles" },
+  { slug: "cuisine", label: "Cuisine & Arts de la table" },
+  { slug: "bebe", label: "Bebe & Enfant" },
+  { slug: "jouets", label: "Jeux & Jouets" },
+  { slug: "sport", label: "Sport & Loisirs" },
+  { slug: "alimentation", label: "Alimentation & Boissons" },
+  { slug: "sante", label: "Sante & Bien-etre" },
+  { slug: "livres", label: "Livres & Papeterie" },
+  { slug: "auto", label: "Auto & Moto" },
+  { slug: "bricolage", label: "Bricolage & Jardin" },
+  { slug: "animalerie", label: "Animalerie" },
+  { slug: "musique", label: "Instruments de musique" },
+  { slug: "art", label: "Art & Artisanat" },
 ] as const;
 
 export type CategorySlug = (typeof CATEGORIES)[number]["slug"];

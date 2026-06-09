@@ -7,15 +7,32 @@ import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
 
-// Couleurs par categorie (du peps !)
-const CAT_STYLE: Record<string, string> = {
-  mode: "from-pink-500 to-rose-500",
-  chaussures: "from-amber-500 to-orange-500",
-  telephones: "from-sky-500 to-blue-600",
-  informatique: "from-cyan-500 to-teal-600",
-  electronique: "from-violet-500 to-purple-600",
-  maison: "from-emerald-500 to-green-600",
-};
+// Palette de degrades repartie sur les categories (du peps !)
+const CAT_PALETTE = [
+  "from-pink-500 to-rose-500",
+  "from-amber-500 to-orange-500",
+  "from-fuchsia-500 to-pink-600",
+  "from-yellow-500 to-amber-600",
+  "from-orange-500 to-red-500",
+  "from-sky-500 to-blue-600",
+  "from-cyan-500 to-teal-600",
+  "from-violet-500 to-purple-600",
+  "from-indigo-500 to-blue-700",
+  "from-emerald-500 to-green-600",
+  "from-teal-500 to-emerald-700",
+  "from-rose-500 to-red-600",
+  "from-blue-500 to-indigo-600",
+  "from-purple-500 to-fuchsia-600",
+  "from-lime-500 to-green-600",
+  "from-red-500 to-orange-600",
+  "from-green-500 to-teal-600",
+  "from-slate-500 to-gray-700",
+  "from-zinc-600 to-slate-800",
+  "from-stone-500 to-amber-700",
+  "from-cyan-500 to-sky-600",
+  "from-violet-600 to-indigo-700",
+  "from-pink-500 to-purple-600",
+];
 
 export default async function HomePage() {
   const { products } = await listProducts({ inStock: true, pageSize: 12 });
@@ -113,7 +130,7 @@ export default async function HomePage() {
               style={{ animationDelay: `${i * 60}ms` }}
             >
               <span
-                className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${CAT_STYLE[c.slug] ?? "from-brand-green to-emerald-600"} text-sm font-bold text-white shadow-soft transition-transform duration-300 group-hover:scale-110`}
+                className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${CAT_PALETTE[i % CAT_PALETTE.length]} text-sm font-bold text-white shadow-soft transition-transform duration-300 group-hover:scale-110`}
               >
                 {c.label.slice(0, 2)}
               </span>
