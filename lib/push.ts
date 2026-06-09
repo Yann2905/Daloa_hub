@@ -6,6 +6,7 @@ import { sql } from "@/lib/db";
  * Necessite FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY.
  */
 export function isPushServerConfigured(): boolean {
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) return true;
   return !!(
     process.env.FIREBASE_PROJECT_ID &&
     process.env.FIREBASE_CLIENT_EMAIL &&
@@ -27,15 +28,25 @@ function normalizePrivateKey(raw: string): string {
 
 async function getMessaging() {
   if (!isPushServerConfigured()) return null;
-  const projectId = process.env.FIREBASE_PROJECT_ID!.trim();
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!.trim();
-  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY!);
 
   const { initializeApp, getApps, cert } = await import("firebase-admin/app");
   const { getMessaging } = await import("firebase-admin/messaging");
-  const app = getApps().length
-    ? getApps()[0]
-    : initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+
+  // Option infaillible : le JSON complet du compte de service dans une variable.
+  let credential;
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    if (typeof sa.private_key === "string") sa.private_key = normalizePrivateKey(sa.private_key);
+    credential = cert(sa);
+  } else {
+    credential = cert({
+      projectId: process.env.FIREBASE_PROJECT_ID!.trim(),
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!.trim(),
+      privateKey: normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY!),
+    });
+  }
+
+  const app = getApps().length ? getApps()[0] : initializeApp({ credential });
   return getMessaging(app);
 }
 
