@@ -2,9 +2,9 @@ import Link from "next/link";
 import { Store, Truck, ShieldCheck, ClipboardList } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { initials } from "@/lib/utils";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { VerifyBanner } from "@/components/auth/verify-banner";
+import { AvatarUpload } from "@/components/profile/avatar-upload";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
@@ -23,11 +23,9 @@ export default async function AccountPage() {
   return (
     <div className="container max-w-2xl space-y-6 py-6">
       {!profile.email_verified && <VerifyBanner />}
-      <div className="flex items-center gap-4">
-        <span className="flex size-16 items-center justify-center rounded-full bg-brand-green text-xl font-bold text-white">
-          {initials(profile.full_name)}
-        </span>
-        <div>
+      <div className="rounded-xl border bg-card p-5 shadow-soft">
+        <AvatarUpload name={profile.full_name} avatarUrl={profile.avatar_url} />
+        <div className="mt-4">
           <h1 className="text-xl font-bold">{profile.full_name}</h1>
           <p className="text-sm text-muted-foreground">{profile.email}</p>
           <p className="text-sm text-muted-foreground">{profile.phone}</p>

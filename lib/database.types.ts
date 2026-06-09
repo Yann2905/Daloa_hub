@@ -135,6 +135,8 @@ export interface Order {
   refused: boolean;
   refusal_reason: string | null;
   delivery_fee_paid: boolean;
+  vendor_settled: boolean;
+  settled_at: string | null;
   created_at: string;
   updated_at: string;
   confirmed_at: string | null;

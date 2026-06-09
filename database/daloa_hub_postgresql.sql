@@ -192,6 +192,8 @@ create table if not exists orders (
   refused           boolean not null default false,
   refusal_reason    text,
   delivery_fee_paid boolean not null default false,
+  vendor_settled    boolean not null default false, -- argent remis au vendeur (cash)
+  settled_at        timestamptz,
   created_at        timestamptz not null default now(),
   updated_at        timestamptz not null default now(),
   confirmed_at      timestamptz,

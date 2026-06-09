@@ -47,9 +47,17 @@ export async function submitDocuments(input: unknown): Promise<{ error?: string 
 }
 
 export async function setAvailability(available: boolean): Promise<{ error?: string }> {
-  const { driver } = await requireDriver();
+  const { driver, userId } = await requireDriver();
   if (driver.status !== "approved") {
     return { error: "Votre compte livreur n'est pas encore valide." };
+  }
+  if (available) {
+    const [u] = await sql<{ avatar_url: string | null }[]>`
+      select avatar_url from users where id = ${userId} limit 1
+    `;
+    if (!u?.avatar_url) {
+      return { error: "Ajoutez une photo de profil avant de passer en ligne." };
+    }
   }
   await sql`update drivers set is_available = ${available}, last_seen_at = now()
             where id = ${driver.id}`;

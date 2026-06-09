@@ -11,7 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import type { Driver } from "@/lib/database.types";
 
-export function DocumentsForm({ driver }: { driver: Driver }) {
+export function DocumentsForm({
+  driver,
+  hasAvatar,
+}: {
+  driver: Driver;
+  hasAvatar: boolean;
+}) {
   const router = useRouter();
   const { toast } = useToast();
   const [cni, setCni] = useState<string | null>(driver.cni_url);
@@ -21,6 +27,14 @@ export function DocumentsForm({ driver }: { driver: Driver }) {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!hasAvatar) {
+      toast({
+        title: "Photo de profil obligatoire",
+        description: "Ajoutez votre photo de profil ci-dessus avant de soumettre.",
+        variant: "error",
+      });
+      return;
+    }
     if (!cni || !vehicleDoc) {
       toast({ title: "Televersez les deux documents", variant: "error" });
       return;
