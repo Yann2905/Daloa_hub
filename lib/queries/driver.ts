@@ -1,7 +1,7 @@
 import "server-only";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
-import type { Driver, Order, OrderItem } from "@/lib/database.types";
+import type { Driver, Order } from "@/lib/database.types";
 
 export async function getMyDriver(): Promise<Driver | null> {
   const user = await getUser();
@@ -16,10 +16,17 @@ export async function getMyDriver(): Promise<Driver | null> {
 }
 
 export interface DeliveryRow extends Order {
-  order_items: Pick<OrderItem, "id" | "name" | "quantity">[];
+  order_items: {
+    id: string;
+    name: string;
+    quantity: number;
+    unit_price: number;
+    image_url: string | null;
+  }[];
   client: { full_name: string; phone: string | null } | null;
   shop: {
     name: string;
+    phone: string | null;
     address: string | null;
     lat: number | null;
     lng: number | null;
@@ -44,16 +51,20 @@ export async function listDriverDeliveries(
         o.vendor_settled, o.settled_at,
         o.created_at, o.updated_at, o.confirmed_at, o.delivered_at,
         json_build_object('full_name', u.full_name, 'phone', u.phone) as client,
-        json_build_object('name', v.shop_name, 'address', v.address,
+        json_build_object('name', v.shop_name, 'phone', vu.phone, 'address', v.address,
           'lat', v.lat, 'lng', v.lng) as shop,
         coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
-          'quantity', oi.quantity)) filter (where oi.id is not null), '[]') as order_items
+          'quantity', oi.quantity, 'unit_price', oi.unit_price::float8,
+          'image_url', (select pi.url from product_images pi
+            where pi.product_id = oi.product_id order by pi.position limit 1))
+          order by oi.created_at) filter (where oi.id is not null), '[]') as order_items
       from orders o
       join users u on u.id = o.client_id
       join vendors v on v.id = o.vendor_id
+      left join users vu on vu.id = v.user_id
       left join order_items oi on oi.order_id = o.id
       where o.driver_id = ${driverId} ${statusFilter}
-      group by o.id, u.full_name, u.phone, v.shop_name, v.address, v.lat, v.lng
+      group by o.id, u.full_name, u.phone, v.shop_name, vu.phone, v.address, v.lat, v.lng
       order by o.created_at desc
     `;
   } catch {

@@ -6,6 +6,7 @@ import { Phone, Eye, Loader2, IdCard, Wallet, User, Bike } from "lucide-react";
 import { getDriverCni, markVendorSettled } from "@/lib/actions/vendor";
 import { OrderManage } from "./order-manage";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
+import { OrderItemsList } from "@/components/order/order-items-list";
 import { formatFcfa, formatDateTime, initials } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
@@ -50,13 +51,13 @@ export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
             </span>
             {order.vendor_settled && <Badge variant="success">Cash recu</Badge>}
           </div>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {order.order_items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}
-          </p>
           <p className="text-xs text-muted-foreground">{formatDateTime(order.created_at)}</p>
         </div>
         <p className="whitespace-nowrap font-bold">{formatFcfa(order.total)}</p>
       </div>
+
+      {/* Articles avec images */}
+      <OrderItemsList items={order.order_items} />
 
       {/* Client */}
       <div className="flex items-center justify-between rounded-lg bg-secondary/60 p-2.5 text-sm">

@@ -96,8 +96,16 @@ export async function listVendorProductsWithImages(
   `;
 }
 
+export interface OrderItemBrief {
+  id: string;
+  name: string;
+  quantity: number;
+  unit_price: number;
+  image_url: string | null;
+}
+
 export interface VendorOrderRow extends Order {
-  order_items: Pick<OrderItem, "id" | "name" | "quantity">[];
+  order_items: OrderItemBrief[];
   client: { full_name: string; phone: string | null } | null;
   driver: {
     id: string;
@@ -128,7 +136,10 @@ export async function listVendorOrders(
              'has_cni', (d.cni_url is not null)
            ) end as driver,
            coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
-             'quantity', oi.quantity)) filter (where oi.id is not null), '[]') as order_items
+             'quantity', oi.quantity, 'unit_price', oi.unit_price::float8,
+             'image_url', (select pi.url from product_images pi
+               where pi.product_id = oi.product_id order by pi.position limit 1))
+             order by oi.created_at) filter (where oi.id is not null), '[]') as order_items
     from orders o
     join users cu on cu.id = o.client_id
     left join drivers d on d.id = o.driver_id

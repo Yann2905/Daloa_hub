@@ -5,8 +5,9 @@ import dynamic from "next/dynamic";
 import { Loader2, Navigation, CheckCircle2, Phone, ChevronUp, Store, MapPin, User } from "lucide-react";
 import { completeDelivery } from "@/lib/actions/driver";
 import { useToast } from "@/components/ui/toast";
-import { formatFcfa } from "@/lib/utils";
+import { formatFcfa, formatDateTime } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
+import { OrderItemsList } from "@/components/order/order-items-list";
 import { Button } from "@/components/ui/button";
 import type { DeliveryRow } from "@/lib/queries/driver";
 
@@ -47,21 +48,29 @@ export function DeliveryCard({ order }: { order: DeliveryRow }) {
 
   return (
     <div className="space-y-3 rounded-xl border bg-card p-4 shadow-soft">
-      <div className="flex items-center justify-between">
-        <span className="font-semibold">{order.code}</span>
+      <div className="flex items-start justify-between gap-2">
+        <div>
+          <span className="font-semibold">{order.code}</span>
+          <p className="text-xs text-muted-foreground">{formatDateTime(order.created_at)}</p>
+        </div>
         <OrderStatusBadge status={order.status} />
       </div>
-      <p className="text-sm text-muted-foreground">
-        {order.order_items.map((it) => `${it.quantity}x ${it.name}`).join(", ")}
-      </p>
+
+      {/* Articles avec images */}
+      <OrderItemsList items={order.order_items} />
 
       {/* Etape 1 : boutique (retrait) */}
       <div className="flex items-start gap-2 rounded-lg bg-secondary/60 p-2.5 text-sm">
         <Store className="mt-0.5 size-4 shrink-0 text-primary" />
-        <div>
+        <div className="flex-1">
           <p className="font-medium">1. Boutique : {order.shop?.name}</p>
           {order.shop?.address && <p className="text-xs text-muted-foreground">{order.shop.address}</p>}
         </div>
+        {order.shop?.phone && (
+          <a href={`tel:${order.shop.phone}`} className="flex items-center gap-1 text-xs font-medium text-primary">
+            <Phone className="size-3.5" /> Appeler
+          </a>
+        )}
       </div>
 
       {/* Etape 2 : client */}
