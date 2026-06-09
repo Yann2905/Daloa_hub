@@ -13,11 +13,23 @@ export function isPushServerConfigured(): boolean {
   );
 }
 
+/** Normalise la cle privee (guillemets parasites, \n litteraux, espaces). */
+function normalizePrivateKey(raw: string): string {
+  let k = raw.trim();
+  // Enleve d'eventuels guillemets entourants colles dans Vercel
+  if ((k.startsWith('"') && k.endsWith('"')) || (k.startsWith("'") && k.endsWith("'"))) {
+    k = k.slice(1, -1);
+  }
+  // Convertit les \n litteraux en vrais sauts de ligne
+  k = k.replace(/\\n/g, "\n");
+  return k;
+}
+
 async function getMessaging() {
   if (!isPushServerConfigured()) return null;
-  const projectId = process.env.FIREBASE_PROJECT_ID!;
+  const projectId = process.env.FIREBASE_PROJECT_ID!.trim();
   const clientEmail = process.env.FIREBASE_CLIENT_EMAIL!.trim();
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n");
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_PRIVATE_KEY!);
 
   const { initializeApp, getApps, cert } = await import("firebase-admin/app");
   const { getMessaging } = await import("firebase-admin/messaging");
