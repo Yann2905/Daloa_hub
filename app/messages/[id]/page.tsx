@@ -46,7 +46,7 @@ export default async function ConversationPage({
         </div>
       </header>
 
-      <div className="flex-1 px-2">
+      <div className="min-h-0 flex-1 px-2">
         <ChatThread conversationId={id} me={part.userId} initialMessages={messages} />
       </div>
     </div>

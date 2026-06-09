@@ -61,6 +61,7 @@ create table if not exists users (
   lng            double precision,
   account_status account_status not null default 'active',
   email_verified boolean not null default false,
+  last_active_at timestamptz,
   created_at     timestamptz not null default now(),
   updated_at     timestamptz not null default now()
 );

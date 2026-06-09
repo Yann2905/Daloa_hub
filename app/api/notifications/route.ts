@@ -10,6 +10,9 @@ export async function GET() {
   const user = await getUser();
   if (!user) return NextResponse.json({ items: [] }, { status: 401 });
 
+  // Presence (pour le statut "en ligne" du chat)
+  await sql`update users set last_active_at = now() where id = ${user.id}`;
+
   const items = await sql`
     select id, user_id, type, title, body, data, is_read, created_at
     from notifications where user_id = ${user.id}

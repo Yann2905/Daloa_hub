@@ -61,14 +61,33 @@ export interface MessageRow {
   sender_id: string;
   body: string;
   created_at: string;
+  read_at: string | null;
 }
 
 export async function listMessages(conversationId: string): Promise<MessageRow[]> {
   return await sql<MessageRow[]>`
-    select id, sender_id, body, created_at
+    select id, sender_id, body, created_at, read_at
     from messages where conversation_id = ${conversationId}
     order by created_at asc limit 200
   `;
+}
+
+/** Met a jour la presence (derniere activite) de l'utilisateur. */
+export async function touchPresence(userId: string): Promise<void> {
+  try {
+    await sql`update users set last_active_at = now() where id = ${userId}`;
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Vrai si l'utilisateur a ete actif il y a moins de 90 secondes. */
+export async function isUserOnline(userId: string): Promise<boolean> {
+  const [r] = await sql<{ online: boolean }[]>`
+    select (last_active_at > now() - interval '90 seconds') as online
+    from users where id = ${userId}
+  `;
+  return r?.online ?? false;
 }
 
 /** En-tete de conversation : nom + avatar de l'autre partie, et la boutique. */
