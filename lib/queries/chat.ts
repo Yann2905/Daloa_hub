@@ -72,6 +72,23 @@ export async function listMessages(conversationId: string): Promise<MessageRow[]
   `;
 }
 
+/** Nombre total de messages non lus pour l'utilisateur courant. */
+export async function getUnreadMessageCount(userId: string): Promise<number> {
+  try {
+    const [r] = await sql<{ n: number }[]>`
+      select count(*)::int as n
+      from messages m
+      join conversations c on c.id = m.conversation_id
+      join vendors v on v.id = c.vendor_id
+      where m.sender_id <> ${userId} and m.read_at is null
+        and (c.client_id = ${userId} or v.user_id = ${userId})
+    `;
+    return r?.n ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 /** Met a jour la presence (derniere activite) de l'utilisateur. */
 export async function touchPresence(userId: string): Promise<void> {
   try {

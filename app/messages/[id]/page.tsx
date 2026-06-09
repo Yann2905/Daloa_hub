@@ -28,9 +28,9 @@ export default async function ConversationPage({
   ]);
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <header className="glass sticky top-0 z-10 flex h-14 items-center gap-3 border-b px-3 safe-top">
-        <Link href="/messages" className="rounded-md p-1 hover:bg-secondary" aria-label="Retour">
+        <Link href="/messages" className="rounded-md p-1 hover:bg-secondary lg:hidden" aria-label="Retour">
           <ArrowLeft className="size-5" />
         </Link>
         {header?.other_avatar ? (

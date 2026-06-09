@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User, MessageCircle } from "lucide-react";
+import { ShoppingCart, Search, User } from "lucide-react";
 import { Logo } from "./logo";
+import { MessagesLink } from "@/components/chat/messages-link";
 import { useCart } from "@/lib/cart/cart-context";
 
 export function SiteHeader() {
@@ -41,13 +42,7 @@ export function SiteHeader() {
               </span>
             )}
           </Link>
-          <Link
-            href="/messages"
-            className="rounded-md p-2 hover:bg-secondary"
-            aria-label="Messages"
-          >
-            <MessageCircle className="size-5" />
-          </Link>
+          <MessagesLink />
           <Link
             href="/compte"
             className="rounded-md p-2 hover:bg-secondary"
