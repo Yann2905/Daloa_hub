@@ -1,13 +1,24 @@
 "use client";
 
-import { useTransition } from "react";
-import { Loader2, Navigation, CheckCircle2, Phone } from "lucide-react";
+import { useState, useTransition } from "react";
+import dynamic from "next/dynamic";
+import { Loader2, Navigation, CheckCircle2, Phone, ChevronUp } from "lucide-react";
 import { completeDelivery } from "@/lib/actions/driver";
 import { useToast } from "@/components/ui/toast";
 import { formatFcfa } from "@/lib/utils";
 import { OrderStatusBadge } from "@/components/order/order-status-badge";
 import { Button } from "@/components/ui/button";
 import type { OrderStatus } from "@/lib/database.types";
+
+// Carte chargee cote client uniquement (Leaflet a besoin du navigateur)
+const DeliveryMap = dynamic(() => import("./delivery-map"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[280px] items-center justify-center rounded-xl border bg-secondary">
+      <Loader2 className="size-5 animate-spin text-muted-foreground" />
+    </div>
+  ),
+});
 
 interface Props {
   order: {
@@ -27,11 +38,9 @@ interface Props {
 export function DeliveryCard({ order }: Props) {
   const { toast } = useToast();
   const [pending, startTransition] = useTransition();
+  const [showMap, setShowMap] = useState(false);
 
-  const gpsUrl =
-    order.dest_lat != null && order.dest_lng != null
-      ? `https://www.openstreetmap.org/directions?to=${order.dest_lat},${order.dest_lng}`
-      : null;
+  const hasDest = order.dest_lat != null && order.dest_lng != null;
 
   function deliver() {
     startTransition(async () => {
@@ -42,7 +51,7 @@ export function DeliveryCard({ order }: Props) {
   }
 
   return (
-    <div className="rounded-lg border bg-card p-4">
+    <div className="rounded-xl border bg-card p-4 shadow-soft">
       <div className="flex items-center justify-between">
         <span className="font-semibold">{order.code}</span>
         <OrderStatusBadge status={order.status} />
@@ -56,11 +65,14 @@ export function DeliveryCard({ order }: Props) {
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
-        {gpsUrl && (
-          <Button asChild variant="outline" size="sm">
-            <a href={gpsUrl} target="_blank" rel="noopener noreferrer">
-              <Navigation className="size-4" /> Navigation GPS
-            </a>
+        {hasDest && (
+          <Button
+            variant={showMap ? "secondary" : "accent"}
+            size="sm"
+            onClick={() => setShowMap((v) => !v)}
+          >
+            {showMap ? <ChevronUp className="size-4" /> : <Navigation className="size-4" />}
+            {showMap ? "Masquer la carte" : "Itineraire"}
           </Button>
         )}
         {order.clientPhone && (
@@ -77,6 +89,12 @@ export function DeliveryCard({ order }: Props) {
           </Button>
         )}
       </div>
+
+      {hasDest && showMap && (
+        <div className="mt-3 animate-in">
+          <DeliveryMap dest={{ lat: order.dest_lat!, lng: order.dest_lng! }} />
+        </div>
+      )}
     </div>
   );
 }
