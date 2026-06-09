@@ -33,7 +33,8 @@ export type NotificationType =
   | "driver_approved"
   | "driver_rejected"
   | "vendor_approved"
-  | "report_received";
+  | "report_received"
+  | "new_message";
 
 export interface Profile {
   id: string;

@@ -7,6 +7,7 @@ const nav: NavItem[] = [
   { href: "/vendeur", label: "Tableau de bord", icon: "LayoutDashboard", exact: true },
   { href: "/vendeur/produits", label: "Produits", icon: "Package" },
   { href: "/vendeur/commandes", label: "Commandes", icon: "ShoppingBag" },
+  { href: "/messages", label: "Messages", icon: "MessagesSquare" },
   { href: "/vendeur/boutique", label: "Ma boutique", icon: "Store" },
   { href: "/vendeur/abonnement", label: "Abonnement", icon: "CreditCard" },
 ];

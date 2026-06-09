@@ -38,7 +38,7 @@ do $$ begin create type report_status as enum ('open','reviewing','resolved','di
 do $$ begin create type rating_target as enum ('vendor','driver'); exception when duplicate_object then null; end $$;
 do $$ begin create type notification_type as enum (
   'new_order','order_accepted','driver_assigned','delivery_completed','order_refused',
-  'subscription_expired','driver_approved','driver_rejected','vendor_approved','report_received'
+  'subscription_expired','driver_approved','driver_rejected','vendor_approved','report_received','new_message'
 ); exception when duplicate_object then null; end $$;
 
 -- Fonction utilitaire : maintien de updated_at
@@ -341,6 +341,28 @@ create table if not exists login_attempts (
   attempts   integer not null default 0,
   reset_at   timestamptz not null
 );
+
+-- Chat (negociation client <-> vendeur)
+create table if not exists conversations (
+  id              uuid primary key default gen_random_uuid(),
+  client_id       uuid not null references users(id) on delete cascade,
+  vendor_id       uuid not null references vendors(id) on delete cascade,
+  last_message_at timestamptz not null default now(),
+  created_at      timestamptz not null default now(),
+  unique (client_id, vendor_id)
+);
+create table if not exists messages (
+  id              uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references conversations(id) on delete cascade,
+  sender_id       uuid not null references users(id) on delete cascade,
+  body            text not null,
+  product_id      uuid references products(id) on delete set null,
+  read_at         timestamptz,
+  created_at      timestamptz not null default now()
+);
+create index if not exists idx_messages_conv on messages(conversation_id, created_at);
+create index if not exists idx_conv_client on conversations(client_id, last_message_at desc);
+create index if not exists idx_conv_vendor on conversations(vendor_id, last_message_at desc);
 
 -- -------------------------------------------------------------------------
 -- 11. TRIGGERS METIER

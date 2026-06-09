@@ -15,6 +15,7 @@ import {
   Package,
   ShoppingBag,
   FileText,
+  MessagesSquare,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/site/logo";
@@ -35,6 +36,7 @@ const ICONS = {
   Package,
   ShoppingBag,
   FileText,
+  MessagesSquare,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;

@@ -5,6 +5,7 @@ import { Star, Store, ImageOff } from "lucide-react";
 import { getProduct } from "@/lib/queries/products";
 import { formatFcfa } from "@/lib/utils";
 import { AddToCart } from "@/components/product/add-to-cart";
+import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
 import type { CategorySlug } from "@/lib/constants";
 
@@ -102,7 +103,7 @@ export default async function ProductDetailPage({
           </p>
         )}
 
-        <div className="pt-2">
+        <div className="space-y-2 pt-2">
           <AddToCart
             line={{
               productId: product.id,
@@ -114,6 +115,12 @@ export default async function ProductDetailPage({
               isBulky: product.is_bulky,
               stock: product.stock,
             }}
+          />
+          <NegotiateButton
+            vendorId={product.vendor_id}
+            productId={product.id}
+            productName={product.name}
+            price={product.price}
           />
         </div>
       </div>
