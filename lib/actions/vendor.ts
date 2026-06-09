@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { signedDocumentUrl } from "@/lib/cloudinary-server";
 import {
   SUBSCRIPTION_AMOUNT_FCFA,
   SUBSCRIPTION_PERIOD_DAYS,
@@ -135,6 +136,44 @@ export async function updateShop(input: unknown): Promise<VResult> {
     where id = ${vendorId}
   `;
   revalidatePath("/vendeur/boutique");
+  return {};
+}
+
+/**
+ * URL signee de la CNI du livreur affecte a une commande du vendeur.
+ * Autorise uniquement le vendeur proprietaire de la commande (verification
+ * d'identite avant remise du colis).
+ */
+export async function getDriverCni(
+  orderId: string,
+): Promise<{ url?: string; error?: string }> {
+  const { vendorId } = await requireVendor();
+  const [row] = await sql<{ cni_url: string | null }[]>`
+    select d.cni_url
+    from orders o join drivers d on d.id = o.driver_id
+    where o.id = ${orderId} and o.vendor_id = ${vendorId}
+    limit 1
+  `;
+  if (!row) return { error: "Livreur introuvable pour cette commande." };
+  if (!row.cni_url) return { error: "Aucune CNI enregistree." };
+  try {
+    return { url: signedDocumentUrl(row.cni_url) };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Erreur." };
+  }
+}
+
+/** Le vendeur confirme avoir recu le cash du livreur pour une commande. */
+export async function markVendorSettled(orderId: string): Promise<VResult> {
+  const { vendorId } = await requireVendor();
+  const updated = await sql`
+    update orders set vendor_settled = true, settled_at = now()
+    where id = ${orderId} and vendor_id = ${vendorId} and status = 'delivered'
+    returning id
+  `;
+  if (updated.length === 0) return { error: "Commande non eligible." };
+  revalidatePath("/vendeur/commandes");
+  revalidatePath("/vendeur");
   return {};
 }
 

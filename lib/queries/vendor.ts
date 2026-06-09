@@ -98,22 +98,45 @@ export async function listVendorProductsWithImages(
 
 export interface VendorOrderRow extends Order {
   order_items: Pick<OrderItem, "id" | "name" | "quantity">[];
+  client: { full_name: string; phone: string | null } | null;
+  driver: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+    avatar_url: string | null;
+    vehicle_type: string | null;
+    has_cni: boolean;
+  } | null;
 }
 
-export async function listVendorOrders(vendorId: string): Promise<VendorOrderRow[]> {
+export async function listVendorOrders(
+  vendorId: string,
+  q?: string,
+): Promise<VendorOrderRow[]> {
   return await sql<VendorOrderRow[]>`
     select o.id, o.code, o.client_id, o.vendor_id, o.driver_id, o.status,
            o.delivery_type, o.fulfillment_type, o.subtotal::float8 as subtotal,
            o.delivery_fee::float8 as delivery_fee, o.total::float8 as total,
            o.distance_km::float8 as distance_km, o.dest_lat, o.dest_lng,
            o.dest_address, o.refused, o.refusal_reason, o.delivery_fee_paid,
+           o.vendor_settled, o.settled_at,
            o.created_at, o.updated_at, o.confirmed_at, o.delivered_at,
+           json_build_object('full_name', cu.full_name, 'phone', cu.phone) as client,
+           case when d.id is not null then json_build_object(
+             'id', d.id, 'full_name', du.full_name, 'phone', du.phone,
+             'avatar_url', du.avatar_url, 'vehicle_type', d.vehicle_type,
+             'has_cni', (d.cni_url is not null)
+           ) end as driver,
            coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
              'quantity', oi.quantity)) filter (where oi.id is not null), '[]') as order_items
     from orders o
+    join users cu on cu.id = o.client_id
+    left join drivers d on d.id = o.driver_id
+    left join users du on du.id = d.user_id
     left join order_items oi on oi.order_id = o.id
     where o.vendor_id = ${vendorId}
-    group by o.id
+      ${q ? sql`and (o.code ilike ${"%" + q + "%"} or cu.phone ilike ${"%" + q + "%"} or cu.full_name ilike ${"%" + q + "%"})` : sql``}
+    group by o.id, cu.full_name, cu.phone, d.id, du.full_name, du.phone, du.avatar_url, d.vehicle_type, d.cni_url
     order by o.created_at desc
   `;
 }

@@ -131,25 +131,46 @@ export async function checkout(payload: unknown): Promise<ActionState> {
       `DALOA HUB: votre commande ${ord.code} est confirmee (${ord.total.toLocaleString("fr-FR")} FCFA). Merci !`,
     );
 
-    // Livraison uniquement : affectation du livreur le plus proche + email
+    // Livraison uniquement : affectation du livreur le plus proche
     if (!isPickup) {
       const [{ assign_nearest_driver: driverId }] = await sql<
         { assign_nearest_driver: string | null }[]
       >`select assign_nearest_driver(${row.id})`;
       if (driverId) {
-        const [du] = await sql<{ user_id: string; full_name: string }[]>`
-          select u.id as user_id, u.full_name from drivers d
+        const [du] = await sql<{ user_id: string; full_name: string; phone: string | null }[]>`
+          select u.id as user_id, u.full_name, u.phone from drivers d
           join users u on u.id = d.user_id where d.id = ${driverId}
         `;
-        if (du) {
+        const [cu] = await sql<{ full_name: string; phone: string | null }[]>`
+          select full_name, phone from users where id = ${user.id}
+        `;
+        if (du && cu) {
+          // Livreur : commande + coordonnees du CLIENT
+          await sql`select notify_user(${du.user_id}, 'driver_assigned', 'Nouvelle livraison',
+            ${`Client : ${cu.full_name}${cu.phone ? " (" + cu.phone + ")" : ""}. Commande ${ord.code}.`},
+            ${sql.json({ order_id: row.id })})`;
           await emailUser(
             du.user_id,
             "Nouvelle livraison a effectuer",
-            `<p>Bonjour ${du.full_name},</p><p>Une commande vous a ete <strong>affectee</strong>.</p>${orderEmailButton(row.id, "Voir la livraison")}`,
+            `<p>Bonjour ${du.full_name},</p><p>Commande <strong>${ord.code}</strong> a livrer.</p><p>Client : <strong>${cu.full_name}</strong>${cu.phone ? " - " + cu.phone : ""}</p>${orderEmailButton(row.id, "Voir la livraison")}`,
           );
           await smsUser(
             du.user_id,
-            `DALOA HUB: une livraison vous est affectee (${ord.code}). Connectez-vous.`,
+            `DALOA HUB: livraison ${ord.code}. Client ${cu.full_name}${cu.phone ? " " + cu.phone : ""}.`,
+          );
+
+          // Client : coordonnees de SON livreur
+          await sql`select notify_user(${user.id}, 'driver_assigned', 'Livreur affecte',
+            ${`Votre livreur : ${du.full_name}${du.phone ? " (" + du.phone + ")" : ""}.`},
+            ${sql.json({ order_id: row.id })})`;
+          await emailUser(
+            user.id,
+            "Un livreur vous a ete affecte",
+            `<p>Votre livreur pour la commande <strong>${ord.code}</strong> :</p><p><strong>${du.full_name}</strong>${du.phone ? " - " + du.phone : ""}</p>${orderEmailButton(row.id, "Suivre ma commande")}`,
+          );
+          await smsUser(
+            user.id,
+            `DALOA HUB: votre livreur ${du.full_name}${du.phone ? " " + du.phone : ""} pour la commande ${ord.code}.`,
           );
         }
       }
@@ -203,7 +224,7 @@ export async function updateOrderStatus(
     return { error: e instanceof Error ? e.message : "Erreur." };
   }
 
-  // Email d'avancement au client
+  // Notification / email d'avancement au client
   const LABELS: Partial<Record<OrderStatus, string>> = {
     confirmed: "Commande confirmee",
     preparing: "Commande en preparation",
@@ -211,21 +232,40 @@ export async function updateOrderStatus(
     delivered: "Commande livree",
   };
   if (LABELS[status]) {
-    const [o] = await sql<{ client_id: string; code: string }[]>`
-      select client_id, code from orders where id = ${orderId}
+    const [o] = await sql<
+      {
+        client_id: string;
+        code: string;
+        client_name: string;
+        driver_name: string | null;
+        driver_phone: string | null;
+      }[]
+    >`
+      select o.client_id, o.code, cu.full_name as client_name,
+             du.full_name as driver_name, du.phone as driver_phone
+      from orders o
+      join users cu on cu.id = o.client_id
+      left join drivers d on d.id = o.driver_id
+      left join users du on du.id = d.user_id
+      where o.id = ${orderId}
     `;
     if (o) {
-      await emailUser(
-        o.client_id,
-        LABELS[status]!,
-        `<p>Votre commande <strong>${o.code}</strong> : ${LABELS[status]!.toLowerCase()}.</p>${orderEmailButton(orderId, "Suivre ma commande")}`,
-      );
-      // SMS pour les etapes les plus importantes (limite le cout)
-      if (status === "delivering" || status === "delivered") {
-        await smsUser(
+      // Au retrait par le livreur : message detaille "retire + en route"
+      if (status === "delivering" && o.driver_name) {
+        const body = `Votre commande ${o.code} (au nom de ${o.client_name}) a ete retiree chez le vendeur. Votre livreur ${o.driver_name}${o.driver_phone ? " (" + o.driver_phone + ")" : ""} est en route.`;
+        await sql`select notify_user(${o.client_id}, 'driver_assigned', 'Commande en route', ${body}, ${sql.json({ order_id: orderId })})`;
+        await emailUser(o.client_id, "Votre commande est en route",
+          `<p>${body}</p>${orderEmailButton(orderId, "Suivre ma livraison")}`);
+        await smsUser(o.client_id, `DALOA HUB: ${body}`);
+      } else {
+        await emailUser(
           o.client_id,
-          `DALOA HUB: commande ${o.code} - ${LABELS[status]!.toLowerCase()}.`,
+          LABELS[status]!,
+          `<p>Votre commande <strong>${o.code}</strong> : ${LABELS[status]!.toLowerCase()}.</p>${orderEmailButton(orderId, "Suivre ma commande")}`,
         );
+        if (status === "delivered") {
+          await smsUser(o.client_id, `DALOA HUB: commande ${o.code} - ${LABELS[status]!.toLowerCase()}.`);
+        }
       }
     }
   }
