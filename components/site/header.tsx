@@ -5,7 +5,6 @@ import { ShoppingCart, Search, User, Heart } from "lucide-react";
 import { Logo } from "./logo";
 import { MessagesLink } from "@/components/chat/messages-link";
 import { NotificationBell } from "@/components/notifications/notification-bell";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { useCart } from "@/lib/cart/cart-context";
 
 export function SiteHeader() {
@@ -25,6 +24,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-1">
+          {/* Mobile : recherche */}
           <Link
             href="/produits"
             className="rounded-md p-2 text-foreground hover:bg-secondary sm:hidden"
@@ -32,6 +32,8 @@ export function SiteHeader() {
           >
             <Search className="size-5" />
           </Link>
+
+          {/* Toujours : panier + notifications */}
           <Link
             href="/panier"
             className="relative rounded-md p-2 hover:bg-secondary"
@@ -44,23 +46,18 @@ export function SiteHeader() {
               </span>
             )}
           </Link>
-          <Link
-            href="/favoris"
-            className="rounded-md p-2 hover:bg-secondary"
-            aria-label="Favoris"
-          >
-            <Heart className="size-5" />
-          </Link>
-          <ThemeToggle />
-          <MessagesLink />
           <NotificationBell />
-          <Link
-            href="/compte"
-            className="rounded-md p-2 hover:bg-secondary"
-            aria-label="Mon compte"
-          >
-            <User className="size-5" />
-          </Link>
+
+          {/* Desktop uniquement (sur mobile c'est dans la barre du bas) */}
+          <div className="hidden items-center gap-1 md:flex">
+            <Link href="/favoris" className="rounded-md p-2 hover:bg-secondary" aria-label="Favoris">
+              <Heart className="size-5" />
+            </Link>
+            <MessagesLink />
+            <Link href="/compte" className="rounded-md p-2 hover:bg-secondary" aria-label="Mon compte">
+              <User className="size-5" />
+            </Link>
+          </div>
         </nav>
       </div>
     </header>

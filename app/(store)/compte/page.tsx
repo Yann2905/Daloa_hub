@@ -7,6 +7,7 @@ import { VerifyBanner } from "@/components/auth/verify-banner";
 import { AvatarUpload } from "@/components/profile/avatar-upload";
 import { PushRegister } from "@/components/push/push-register";
 import { EnablePushButton } from "@/components/push/enable-push-button";
+import { ThemeSwitch } from "@/components/theme-switch";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
@@ -34,6 +35,8 @@ export default async function AccountPage() {
           <p className="text-sm text-muted-foreground">{profile.phone}</p>
         </div>
       </div>
+
+      <ThemeSwitch />
 
       <EnablePushButton />
 
