@@ -77,7 +77,7 @@ export function BottomNav() {
               <Link
                 href={item.href}
                 className={cn(
-                  "relative flex flex-col items-center gap-0.5 py-2 text-[11px]",
+                  "relative flex flex-col items-center gap-0.5 py-2 text-[11px] transition-transform active:scale-90",
                   active ? "text-brand-green" : "text-muted-foreground",
                 )}
               >

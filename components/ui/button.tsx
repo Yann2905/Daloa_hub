@@ -19,7 +19,7 @@ const buttonVariants = cva(
         ghost: "hover:bg-secondary hover:text-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         accent:
-          "bg-accent text-accent-foreground shadow-soft hover:bg-accent/90 hover:shadow-glow-blue",
+          "bg-accent text-accent-foreground shadow-soft hover:bg-accent/90 hover:shadow-glow-orange",
         royal:
           "bg-royal text-royal-foreground shadow-soft hover:bg-royal/90 hover:shadow-glow-blue",
         gradient:

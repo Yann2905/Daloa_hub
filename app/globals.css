@@ -84,6 +84,18 @@
     overscroll-behavior-y: none;
   }
 
+  /* Reactivite du tap : supprime le delai de 300 ms sur mobile */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  textarea,
+  label,
+  summary {
+    touch-action: manipulation;
+  }
+
   /* Titres avec la police d'affichage (Sora) pour le caractere */
   h1,
   h2,
