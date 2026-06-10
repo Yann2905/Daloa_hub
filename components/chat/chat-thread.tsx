@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Send, Loader2, Check, CheckCheck } from "lucide-react";
-import { sendMessage } from "@/lib/actions/chat";
+import { Send, Loader2, Check, CheckCheck, Trash2 } from "lucide-react";
+import { sendMessage, deleteMessage } from "@/lib/actions/chat";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 interface Msg {
   id: string;
   sender_id: string;
-  body: string;
+  body: string | null;
   created_at: string;
   read_at?: string | null;
+  deleted?: boolean;
 }
 
 function timeLabel(iso: string) {
@@ -103,6 +104,12 @@ export function ChatThread({
     if (res.error) toast({ title: res.error, variant: "error" });
   }
 
+  async function del(id: string) {
+    setMessages((m) => m.map((x) => (x.id === id ? { ...x, deleted: true, body: null } : x)));
+    const res = await deleteMessage(id);
+    if (res.error) toast({ title: res.error, variant: "error" });
+  }
+
   function Ticks({ m }: { m: Msg }) {
     if (m.id.startsWith("tmp-")) return <Check className="size-3.5 text-white/60" />;
     if (m.read_at) return <CheckCheck className="size-3.5 text-sky-300" />; // lu (bleu)
@@ -121,17 +128,33 @@ export function ChatThread({
         {messages.map((m) => {
           const mine = m.sender_id === me;
           return (
-            <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+            <div key={m.id} className={cn("group flex items-center gap-1.5", mine ? "justify-end" : "justify-start")}>
+              {mine && !m.deleted && !m.id.startsWith("tmp-") && (
+                <button
+                  type="button"
+                  onClick={() => del(m.id)}
+                  aria-label="Supprimer le message"
+                  className="text-muted-foreground opacity-0 transition group-hover:opacity-100"
+                >
+                  <Trash2 className="size-4" />
+                </button>
+              )}
               <div
                 className={cn(
                   "max-w-[78%] rounded-2xl px-3.5 py-2 text-sm shadow-soft",
                   mine ? "rounded-br-sm bg-primary text-primary-foreground" : "rounded-bl-sm bg-card",
                 )}
               >
-                <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                {m.deleted ? (
+                  <p className={cn("italic", mine ? "text-white/70" : "text-muted-foreground")}>
+                    Message supprime
+                  </p>
+                ) : (
+                  <p className="whitespace-pre-wrap break-words">{m.body}</p>
+                )}
                 <span className={cn("mt-0.5 flex items-center justify-end gap-1 text-[10px]", mine ? "text-white/70" : "text-muted-foreground")}>
                   {timeLabel(m.created_at)}
-                  {mine && <Ticks m={m} />}
+                  {mine && !m.deleted && <Ticks m={m} />}
                 </span>
               </div>
             </div>

@@ -93,6 +93,20 @@ export async function sendMessage(input: {
   return {};
 }
 
+/** Supprime un message (seulement le sien). Suppression douce ("Message supprime"). */
+export async function deleteMessage(messageId: string): Promise<{ error?: string }> {
+  const user = await getUser();
+  if (!user) return { error: "Non autorise." };
+  const [m] = await sql<{ sender_id: string; conversation_id: string }[]>`
+    select sender_id, conversation_id from messages where id = ${messageId} limit 1
+  `;
+  if (!m) return { error: "Message introuvable." };
+  if (m.sender_id !== user.id) return { error: "Vous ne pouvez supprimer que vos messages." };
+  await sql`update messages set deleted_at = now() where id = ${messageId}`;
+  revalidatePath(`/messages/${m.conversation_id}`);
+  return {};
+}
+
 export async function markConversationRead(conversationId: string): Promise<void> {
   const part = await getParticipation(conversationId);
   if (!part) return;

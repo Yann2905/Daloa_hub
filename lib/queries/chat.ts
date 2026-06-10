@@ -41,7 +41,8 @@ export async function listMyConversations(): Promise<ConversationRow[]> {
       select c.id, c.last_message_at,
         case when c.client_id = ${user.id} then vu.full_name else cu.full_name end as other_name,
         case when c.client_id = ${user.id} then vu.avatar_url else cu.avatar_url end as other_avatar,
-        (select m.body from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_body,
+        (select case when m.deleted_at is not null then 'Message supprime' else m.body end
+           from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_body,
         (select count(*)::int from messages m where m.conversation_id = c.id
            and m.sender_id <> ${user.id} and m.read_at is null) as unread
       from conversations c
@@ -59,14 +60,17 @@ export async function listMyConversations(): Promise<ConversationRow[]> {
 export interface MessageRow {
   id: string;
   sender_id: string;
-  body: string;
+  body: string | null;
   created_at: string;
   read_at: string | null;
+  deleted: boolean;
 }
 
 export async function listMessages(conversationId: string): Promise<MessageRow[]> {
   return await sql<MessageRow[]>`
-    select id, sender_id, body, created_at, read_at
+    select id, sender_id,
+           case when deleted_at is not null then null else body end as body,
+           created_at, read_at, (deleted_at is not null) as deleted
     from messages where conversation_id = ${conversationId}
     order by created_at asc limit 200
   `;
@@ -80,7 +84,7 @@ export async function getUnreadMessageCount(userId: string): Promise<number> {
       from messages m
       join conversations c on c.id = m.conversation_id
       join vendors v on v.id = c.vendor_id
-      where m.sender_id <> ${userId} and m.read_at is null
+      where m.sender_id <> ${userId} and m.read_at is null and m.deleted_at is null
         and (c.client_id = ${userId} or v.user_id = ${userId})
     `;
     return r?.n ?? 0;
