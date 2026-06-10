@@ -39,16 +39,11 @@ export function ThemeSwitch() {
         aria-checked={dark}
         onClick={() => set(!dark)}
         className={cn(
-          "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-          dark ? "bg-primary" : "bg-input",
+          "flex h-7 w-12 shrink-0 items-center rounded-full p-0.5 transition-colors",
+          dark ? "justify-end bg-primary" : "justify-start bg-input",
         )}
       >
-        <span
-          className={cn(
-            "absolute top-0.5 size-6 rounded-full bg-white shadow transition-transform",
-            dark ? "translate-x-5" : "translate-x-0.5",
-          )}
-        />
+        <span className="size-6 rounded-full bg-white shadow transition-all" />
       </button>
     </div>
   );
