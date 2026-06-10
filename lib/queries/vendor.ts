@@ -21,7 +21,7 @@ export async function getVendorDailyOrders(vendorId: string): Promise<{ label: s
   try {
     return await sql<{ label: string; value: number }[]>`
       select to_char(d.day, 'DD/MM') as label, coalesce(count(o.id), 0)::int as value
-      from generate_series(current_date - interval '13 days', current_date, interval '1 day') as d(day)
+      from generate_series(current_date - interval '6 days', current_date, interval '1 day') as d(day)
       left join orders o on o.vendor_id = ${vendorId} and o.created_at::date = d.day::date
       group by d.day order by d.day
     `;

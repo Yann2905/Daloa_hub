@@ -113,7 +113,7 @@ export default async function VendorDashboard() {
       </div>
 
       {dailyOrders.length > 0 && (
-        <BarChart data={dailyOrders} title="Commandes (14 derniers jours)" />
+        <BarChart data={dailyOrders} title="Commandes (7 derniers jours)" />
       )}
 
       <div className="grid gap-3 sm:grid-cols-2">

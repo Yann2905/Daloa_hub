@@ -177,6 +177,9 @@
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
   }
+  .dark .glass {
+    background: rgba(18, 24, 38, 0.85);
+  }
 
   /* Animations d'entree utilitaires */
   .animate-in {
