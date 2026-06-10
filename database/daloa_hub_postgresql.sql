@@ -368,6 +368,15 @@ create index if not exists idx_messages_conv on messages(conversation_id, create
 create index if not exists idx_conv_client on conversations(client_id, last_message_at desc);
 create index if not exists idx_conv_vendor on conversations(vendor_id, last_message_at desc);
 
+-- Favoris (wishlist)
+create table if not exists favorites (
+  user_id    uuid not null references users(id) on delete cascade,
+  product_id uuid not null references products(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, product_id)
+);
+create index if not exists idx_fav_user on favorites(user_id, created_at desc);
+
 -- Tokens FCM (notifications push)
 create table if not exists fcm_tokens (
   token      text primary key,

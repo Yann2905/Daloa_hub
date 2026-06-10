@@ -5,6 +5,7 @@ import { getProduct } from "@/lib/queries/products";
 import { formatFcfa } from "@/lib/utils";
 import { AddToCart } from "@/components/product/add-to-cart";
 import { ProductGallery } from "@/components/product/product-gallery";
+import { FavoriteButton } from "@/components/product/favorite-button";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
 import type { CategorySlug } from "@/lib/constants";
@@ -44,7 +45,14 @@ export default async function ProductDetailPage({
           )}
         </div>
 
-        <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
+          <FavoriteButton
+            productId={product.id}
+            className="size-11 shrink-0 border bg-card"
+            iconClassName="size-5"
+          />
+        </div>
 
         <div className="flex flex-wrap items-center gap-3">
           <span className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-3xl font-extrabold text-transparent">

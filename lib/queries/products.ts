@@ -38,6 +38,29 @@ export interface ProductPage {
   total: number;
 }
 
+/** Produits favoris d'un utilisateur (les plus recents en premier). */
+export async function listFavorites(userId: string): Promise<ProductWithImages[]> {
+  try {
+    const rows = await sql<(ProductWithImages & { total_count: number })[]>`
+      select ${PRODUCT_SELECT}
+      from favorites f
+      join products p on p.id = f.product_id
+      join vendors v on v.id = p.vendor_id
+      left join categories c on c.id = p.category_id
+      left join product_images pi on pi.product_id = p.id
+      where f.user_id = ${userId} and p.is_active = true
+      group by p.id, c.id, v.id, f.created_at
+      order by f.created_at desc
+    `;
+    return rows.map(({ total_count, ...p }) => {
+      void total_count;
+      return p as ProductWithImages;
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function listProducts(
   filters: ProductFilters = {},
 ): Promise<ProductPage> {

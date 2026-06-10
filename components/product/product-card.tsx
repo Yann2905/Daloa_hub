@@ -4,6 +4,7 @@ import { Star, ImageOff } from "lucide-react";
 import type { ProductWithImages } from "@/lib/database.types";
 import { formatFcfa } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { FavoriteButton } from "./favorite-button";
 
 export function ProductCard({ product }: { product: ProductWithImages }) {
   const img = product.product_images?.sort((a, b) => a.position - b.position)[0];
@@ -44,19 +45,20 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
           {outOfStock && <Badge variant="destructive">Rupture</Badge>}
           {product.is_bulky && <Badge variant="secondary">Volumineux</Badge>}
         </div>
-        {product.rating_count > 0 && (
-          <span className="absolute right-2 top-2 flex items-center gap-0.5 rounded-full bg-white/90 px-2 py-0.5 text-xs font-semibold shadow-soft backdrop-blur">
-            <Star className="size-3 fill-amber-400 text-amber-400" />
-            {product.rating_avg.toFixed(1)}
-          </span>
-        )}
+        <FavoriteButton productId={product.id} className="absolute right-2 top-2 size-8" iconClassName="size-4" />
       </div>
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</p>
-        {product.vendors && (
-          <p className="truncate text-xs text-muted-foreground">{product.vendors.shop_name}</p>
-        )}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          {product.vendors && <span className="truncate">{product.vendors.shop_name}</span>}
+          {product.rating_count > 0 && (
+            <span className="flex shrink-0 items-center gap-0.5">
+              <Star className="size-3 fill-amber-400 text-amber-400" />
+              {product.rating_avg.toFixed(1)}
+            </span>
+          )}
+        </div>
         <div className="mt-auto flex items-baseline gap-1.5 pt-1.5">
           <span className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-base font-extrabold text-transparent">
             {formatFcfa(product.price)}

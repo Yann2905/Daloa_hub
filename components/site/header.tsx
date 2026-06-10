@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ShoppingCart, Search, User } from "lucide-react";
+import { ShoppingCart, Search, User, Heart } from "lucide-react";
 import { Logo } from "./logo";
 import { MessagesLink } from "@/components/chat/messages-link";
 import { useCart } from "@/lib/cart/cart-context";
@@ -41,6 +41,13 @@ export function SiteHeader() {
                 {count}
               </span>
             )}
+          </Link>
+          <Link
+            href="/favoris"
+            className="rounded-md p-2 hover:bg-secondary"
+            aria-label="Favoris"
+          >
+            <Heart className="size-5" />
           </Link>
           <MessagesLink />
           <Link
