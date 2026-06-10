@@ -12,12 +12,22 @@ const sora = Sora({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL?.startsWith("http")
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : "https://daloa-hub.vercel.app",
+  ),
   title: {
     default: "DALOA HUB - Marketplace de Daloa",
     template: "%s | DALOA HUB",
   },
   description:
     "Plateforme numerique de la ville de Daloa : achetez, vendez et faites livrer en toute simplicite.",
+  openGraph: {
+    type: "website",
+    siteName: "DALOA HUB",
+    locale: "fr_FR",
+  },
   manifest: "/manifest.webmanifest",
   applicationName: "DALOA HUB",
   appleWebApp: {

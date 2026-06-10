@@ -9,11 +9,42 @@ import { AddToCart } from "@/components/product/add-to-cart";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { FavoriteButton } from "@/components/product/favorite-button";
 import { ReviewForm } from "@/components/product/review-form";
+import { ShareButton } from "@/components/share-button";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
 import type { CategorySlug } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const product = await getProduct(id);
+  if (!product) return { title: "Produit introuvable" };
+  const img = product.product_images?.[0]?.url;
+  const desc =
+    product.description?.slice(0, 160) ||
+    `${product.name} a ${formatFcfa(product.price)} sur DALOA HUB, la marketplace de Daloa.`;
+  return {
+    title: product.name,
+    description: desc,
+    openGraph: {
+      title: product.name,
+      description: desc,
+      type: "website",
+      images: img ? [{ url: img }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.name,
+      description: desc,
+      images: img ? [img] : [],
+    },
+  };
+}
 
 export default async function ProductDetailPage({
   params,
@@ -57,11 +88,10 @@ export default async function ProductDetailPage({
 
         <div className="flex items-start justify-between gap-3">
           <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
-          <FavoriteButton
-            productId={product.id}
-            className="size-11 shrink-0 border bg-card"
-            iconClassName="size-5"
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <ShareButton text={`${product.name} - ${formatFcfa(product.price)} sur DALOA HUB`} label="" className="size-11 px-0" />
+            <FavoriteButton productId={product.id} className="size-11 border bg-card" iconClassName="size-5" />
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
