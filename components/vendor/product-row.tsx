@@ -58,7 +58,11 @@ export function ProductRow({
           ) : (
             <Badge variant="secondary">Masque</Badge>
           )}
-          {product.stock <= 0 && <Badge variant="destructive">Rupture</Badge>}
+          {product.stock <= 0 ? (
+            <Badge variant="destructive">Rupture</Badge>
+          ) : (
+            product.stock <= 3 && <Badge variant="warning">Stock bas ({product.stock})</Badge>
+          )}
         </div>
       </div>
 

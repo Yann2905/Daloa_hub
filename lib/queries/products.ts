@@ -85,6 +85,7 @@ export async function listProducts(
       left join product_images pi on pi.product_id = p.id
       where p.is_active = true and v.status = 'approved'
         and v.lat is not null and v.lng is not null
+        and p.stock > 0
         ${filters.search ? sql`and p.name ilike ${"%" + filters.search + "%"}` : sql``}
         ${filters.category ? sql`and c.slug = ${filters.category}` : sql``}
         ${filters.vendorId ? sql`and p.vendor_id = ${filters.vendorId}` : sql``}

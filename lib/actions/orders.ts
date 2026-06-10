@@ -150,6 +150,21 @@ export async function checkout(payload: unknown): Promise<ActionState> {
         body: `Commande ${ord.code} recue.`,
         url: "/vendeur/commandes",
       });
+
+      // Alerte stock bas / rupture (le trigger a deja decremente le stock)
+      const low = await sql<{ name: string; stock: number }[]>`
+        select name, stock from products
+        where vendor_id = ${vendorId}
+          and id = any(${items.map((i) => i.productId)}) and stock <= 3
+      `;
+      if (low.length > 0) {
+        const body = low
+          .map((p) => `${p.name} : ${p.stock === 0 ? "RUPTURE" : p.stock + " restant(s)"}`)
+          .join(" - ");
+        await sql`select notify_user(${vu.user_id}, 'new_order', 'Stock bas',
+          ${body}, ${sql.json({})})`;
+        await pushUser(vu.user_id, { title: "Stock bas", body, url: "/vendeur/produits" });
+      }
     }
 
     // Confirmation au client
