@@ -37,7 +37,7 @@ export function ProductFilters() {
   }, [search]);
 
   return (
-    <div className="sticky top-16 z-20 space-y-3 rounded-2xl border bg-card/90 p-3 shadow-soft backdrop-blur">
+    <div className="space-y-3 rounded-2xl border bg-card p-3 shadow-soft">
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
