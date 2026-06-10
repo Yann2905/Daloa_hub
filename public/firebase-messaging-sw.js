@@ -23,3 +23,25 @@ if (config.apiKey && config.projectId) {
   // et gere le clic (ouverture du lien) automatiquement.
   firebase.messaging();
 }
+
+// Badge sur l'icone de l'app installee (nombre de non-lus), meme app fermee.
+self.addEventListener("push", (event) => {
+  try {
+    const payload = event.data ? event.data.json() : null;
+    const badge = payload && payload.data && payload.data.badge;
+    if (badge != null && self.navigator && self.navigator.setAppBadge) {
+      event.waitUntil(self.navigator.setAppBadge(Number(badge) || 0));
+    }
+  } catch (e) {
+    /* ignore */
+  }
+});
+
+// Au clic, on efface le badge (l'app va se rouvrir et recalculer).
+self.addEventListener("notificationclick", () => {
+  try {
+    if (self.navigator && self.navigator.clearAppBadge) self.navigator.clearAppBadge();
+  } catch (e) {
+    /* ignore */
+  }
+});

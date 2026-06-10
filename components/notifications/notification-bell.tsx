@@ -9,16 +9,33 @@ import type { Notification } from "@/lib/database.types";
  * Cloche de notifications par polling (toutes les 20 s) contre /api/notifications.
  * Remplace l'abonnement temps reel ; suffisant et robuste sur connexion lente.
  */
+// App Badging API : nombre sur l'icone de l'app installee (PWA), meme fermee.
+function setAppBadge(n: number) {
+  try {
+    const nav = navigator as Navigator & {
+      setAppBadge?: (n?: number) => void;
+      clearAppBadge?: () => void;
+    };
+    if (n > 0) nav.setAppBadge?.(n);
+    else nav.clearAppBadge?.();
+  } catch {
+    /* non supporte */
+  }
+}
+
 export function NotificationBell() {
   const [items, setItems] = useState<Notification[]>([]);
+  const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/notifications", { cache: "no-store" });
       if (!res.ok) return;
-      const data = (await res.json()) as { items: Notification[] };
+      const data = (await res.json()) as { items: Notification[]; unread: number; total: number };
       setItems(data.items ?? []);
+      setUnread(data.unread ?? 0);
+      setAppBadge(data.total ?? 0);
     } catch {
       /* hors ligne : on ignore */
     }
@@ -30,10 +47,9 @@ export function NotificationBell() {
     return () => clearInterval(id);
   }, [load]);
 
-  const unread = items.filter((i) => !i.is_read).length;
-
   async function markAllRead() {
     setItems((prev) => prev.map((i) => ({ ...i, is_read: true })));
+    setUnread(0);
     try {
       await fetch("/api/notifications", { method: "POST" });
     } catch {

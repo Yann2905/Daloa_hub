@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
+import { getUnreadMessageCount } from "@/lib/queries/chat";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -8,7 +9,7 @@ export const runtime = "nodejs";
 /** Liste les notifications de l'utilisateur connecte (polling). */
 export async function GET() {
   const user = await getUser();
-  if (!user) return NextResponse.json({ items: [] }, { status: 401 });
+  if (!user) return NextResponse.json({ items: [], unread: 0, total: 0 }, { status: 401 });
 
   // Presence (pour le statut "en ligne" du chat)
   await sql`update users set last_active_at = now() where id = ${user.id}`;
@@ -18,7 +19,12 @@ export async function GET() {
     from notifications where user_id = ${user.id}
     order by created_at desc limit 20
   `;
-  return NextResponse.json({ items });
+  const [{ n: unread }] = await sql<{ n: number }[]>`
+    select count(*)::int as n from notifications where user_id = ${user.id} and is_read = false
+  `;
+  const messages = await getUnreadMessageCount(user.id);
+  // total = notifications + messages non lus (pour le badge de l'icone PWA)
+  return NextResponse.json({ items, unread, total: unread + messages });
 }
 
 /** Marque toutes les notifications comme lues. */

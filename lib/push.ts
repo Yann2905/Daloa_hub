@@ -1,5 +1,19 @@
 import "server-only";
 import { sql } from "@/lib/db";
+import { getUnreadMessageCount } from "@/lib/queries/chat";
+
+/** Total non lu d'un utilisateur (notifications + messages) pour le badge d'icone. */
+async function unreadBadge(userId: string): Promise<number> {
+  try {
+    const [{ n }] = await sql<{ n: number }[]>`
+      select count(*)::int as n from notifications where user_id = ${userId} and is_read = false
+    `;
+    const m = await getUnreadMessageCount(userId);
+    return (n ?? 0) + m;
+  } catch {
+    return 0;
+  }
+}
 
 /**
  * Notifications push via Firebase Cloud Messaging (FCM).
@@ -93,13 +107,14 @@ export async function pushUserResult(
     }
     const tokens = rows.map((r) => r.token);
     const link = absoluteLink(payload.url);
+    const badge = await unreadBadge(userId);
 
     // Message "notification" : affiche automatiquement par FCM (le plus fiable
     // sur le web, pas de dependance a onBackgroundMessage). Le clic ouvre le lien.
     const resp = await messaging.sendEachForMulticast({
       tokens,
       notification: { title: payload.title, body: payload.body },
-      data: { url: link },
+      data: { url: link, badge: String(badge) },
       webpush: {
         notification: {
           title: payload.title,
