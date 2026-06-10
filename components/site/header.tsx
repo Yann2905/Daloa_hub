@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ShoppingCart, Search, User, Heart } from "lucide-react";
 import { Logo } from "./logo";
 import { MessagesLink } from "@/components/chat/messages-link";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { useCart } from "@/lib/cart/cart-context";
 
 export function SiteHeader() {
@@ -50,6 +51,7 @@ export function SiteHeader() {
             <Heart className="size-5" />
           </Link>
           <MessagesLink />
+          <NotificationBell />
           <Link
             href="/compte"
             className="rounded-md p-2 hover:bg-secondary"
