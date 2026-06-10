@@ -67,8 +67,37 @@ export default async function ProductDetailPage({
     ? await getReviewEligibility(id, user.id)
     : { canReview: false, orderId: null };
 
+  // Donnees structurees (Google : prix + etoiles dans les resultats)
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: product.name,
+    image: images.map((i) => i.url),
+    description: product.description || `${product.name} sur DALOA HUB`,
+    brand: product.vendors ? { "@type": "Brand", name: product.vendors.shop_name } : undefined,
+    offers: {
+      "@type": "Offer",
+      price: product.price,
+      priceCurrency: "XOF",
+      availability: product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+    },
+    ...(product.rating_count > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: product.rating_avg,
+            reviewCount: product.rating_count,
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="container space-y-10 py-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="grid gap-8 md:grid-cols-2">
         {/* Galerie defilante */}
         <ProductGallery images={images} alt={product.name} />
