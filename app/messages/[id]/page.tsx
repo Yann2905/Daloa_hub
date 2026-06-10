@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Headset } from "lucide-react";
 import {
   getParticipation,
   listMessages,
@@ -10,6 +10,7 @@ import {
 import { sql } from "@/lib/db";
 import { initials } from "@/lib/utils";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Conversation" };
@@ -24,10 +25,13 @@ export default async function ConversationPage({
   if (!part) notFound();
 
   // Marque immediatement les messages recus comme lus (efface le compteur)
-  await sql`
-    update messages set read_at = now()
-    where conversation_id = ${id} and sender_id <> ${part.userId} and read_at is null
-  `;
+  if (part.isSupport) {
+    await sql`update messages set read_at = now() where conversation_id = ${id}
+      and read_at is null and from_team = ${part.isClient}`;
+  } else {
+    await sql`update messages set read_at = now() where conversation_id = ${id}
+      and sender_id <> ${part.userId} and read_at is null`;
+  }
 
   const [messages, header] = await Promise.all([
     listMessages(id),
@@ -40,7 +44,11 @@ export default async function ConversationPage({
         <Link href="/messages" className="rounded-md p-1 hover:bg-secondary lg:hidden" aria-label="Retour">
           <ArrowLeft className="size-5" />
         </Link>
-        {header?.other_avatar ? (
+        {header?.is_support ? (
+          <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-orange text-white">
+            <Headset className="size-4" />
+          </span>
+        ) : header?.other_avatar ? (
           <Image src={header.other_avatar} alt={header.other_name} width={36} height={36} className="size-9 rounded-full object-cover" />
         ) : (
           <span className="flex size-9 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
@@ -48,8 +56,13 @@ export default async function ConversationPage({
           </span>
         )}
         <div className="min-w-0">
-          <p className="truncate font-semibold leading-tight">{header?.other_name}</p>
-          <p className="truncate text-xs text-muted-foreground">{header?.shop_name}</p>
+          <p className="flex items-center gap-1 truncate font-semibold leading-tight">
+            {header?.other_name}
+            {header?.is_support && header?.is_client && <VerifiedBadge />}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {header?.is_support ? "Service client - reponse rapide" : header?.shop_name}
+          </p>
         </div>
       </header>
 

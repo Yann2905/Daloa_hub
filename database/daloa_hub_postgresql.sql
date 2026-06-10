@@ -349,21 +349,27 @@ create table if not exists login_attempts (
   reset_at   timestamptz not null
 );
 
--- Chat (negociation client <-> vendeur)
+-- Chat (negociation client <-> vendeur ET service client "Equipe de DALOA HUB")
 create table if not exists conversations (
   id              uuid primary key default gen_random_uuid(),
   client_id       uuid not null references users(id) on delete cascade,
-  vendor_id       uuid not null references vendors(id) on delete cascade,
+  vendor_id       uuid references vendors(id) on delete cascade, -- null si support
+  is_support      boolean not null default false,
+  needs_human     boolean not null default false,
   last_message_at timestamptz not null default now(),
   created_at      timestamptz not null default now(),
   unique (client_id, vendor_id)
 );
+-- Un seul fil de support par utilisateur
+create unique index if not exists uniq_support_thread on conversations(client_id) where is_support;
 create table if not exists messages (
   id              uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references conversations(id) on delete cascade,
-  sender_id       uuid not null references users(id) on delete cascade,
+  sender_id       uuid references users(id) on delete cascade, -- null si message IA/systeme
   body            text not null,
   product_id      uuid references products(id) on delete set null,
+  from_team       boolean not null default false, -- message de l'equipe DALOA HUB
+  is_ai           boolean not null default false, -- genere par l'agent IA
   read_at         timestamptz,
   deleted_at      timestamptz,
   created_at      timestamptz not null default now()

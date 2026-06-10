@@ -24,14 +24,17 @@ export async function GET(
 
   const messages = await listMessages(id);
   // Marque les messages recus comme lus
-  await sql`
-    update messages set read_at = now()
-    where conversation_id = ${id} and sender_id <> ${part.userId} and read_at is null
-  `;
+  if (part.isSupport) {
+    await sql`update messages set read_at = now() where conversation_id = ${id}
+      and read_at is null and from_team = ${part.isClient}`;
+  } else {
+    await sql`update messages set read_at = now() where conversation_id = ${id}
+      and sender_id <> ${part.userId} and read_at is null`;
+  }
 
-  // L'autre partie est-elle en ligne ?
+  // L'autre partie est-elle en ligne ? (sans objet pour le support)
   const otherId = part.isClient ? part.vendor_user : part.client_id;
-  const otherOnline = await isUserOnline(otherId);
+  const otherOnline = !part.isSupport && otherId ? await isUserOnline(otherId) : false;
 
   return NextResponse.json({ me: part.userId, otherOnline, messages });
 }

@@ -6,6 +6,111 @@ import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { getParticipation } from "@/lib/queries/chat";
 import { pushUser } from "@/lib/push";
+import { generateSupportReply } from "@/lib/support-ai";
+
+const TEAM = "Equipe de DALOA HUB";
+
+/** Reponse automatique de l'agent IA dans un fil de support. */
+async function replySupportAI(convId: string, clientId: string): Promise<void> {
+  try {
+    const rows = await sql<{ body: string; from_team: boolean }[]>`
+      select body, from_team from messages
+      where conversation_id = ${convId} and deleted_at is null
+      order by created_at asc limit 20
+    `;
+    const history = rows.map((r) => ({
+      role: (r.from_team ? "assistant" : "user") as "assistant" | "user",
+      content: r.body,
+    }));
+    const { reply, escalate } = await generateSupportReply(history);
+
+    await sql`insert into messages (conversation_id, sender_id, body, from_team, is_ai)
+      values (${convId}, null, ${reply}, true, true)`;
+    await sql`update conversations set last_message_at = now(), needs_human = ${escalate} where id = ${convId}`;
+    await sql`select notify_user(${clientId}, 'new_message', ${TEAM},
+      ${reply.slice(0, 120)}, ${sql.json({ conversation_id: convId })})`;
+    await pushUser(clientId, { title: TEAM, body: reply.slice(0, 90), url: `/messages/${convId}` });
+
+    if (escalate) {
+      const admins = await sql<{ id: string }[]>`select id from users where role = 'admin'`;
+      for (const a of admins) {
+        await sql`select notify_user(${a.id}, 'report_received', 'Support a traiter',
+          'Un utilisateur a besoin d''aide humaine.', ${sql.json({ conversation_id: convId })})`;
+      }
+    }
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Ouvre (ou cree) le fil de service client de l'utilisateur courant. */
+export async function getOrCreateSupportThread(): Promise<{ id?: string; error?: string }> {
+  const user = await getUser();
+  if (!user) return { error: "Connectez-vous pour contacter le service client." };
+  const [existing] = await sql<{ id: string }[]>`
+    select id from conversations where client_id = ${user.id} and is_support limit 1
+  `;
+  if (existing) return { id: existing.id };
+  const [conv] = await sql<{ id: string }[]>`
+    insert into conversations (client_id, is_support) values (${user.id}, true) returning id
+  `;
+  await sql`insert into messages (conversation_id, sender_id, body, from_team, is_ai)
+    values (${conv.id}, null, ${"Bonjour ! Je suis l'assistant DALOA HUB. Posez-moi votre question, je suis la pour vous aider."}, true, true)`;
+  await sql`update conversations set last_message_at = now() where id = ${conv.id}`;
+  return { id: conv.id };
+}
+
+/** Admin : envoie un message a UN utilisateur (depuis l'Equipe). Retourne le fil. */
+export async function adminMessageUser(
+  userId: string,
+  body: string,
+): Promise<{ id?: string; error?: string }> {
+  const me = await getUser();
+  if (!me || me.role !== "admin") return { error: "Acces refuse." };
+  const text = body.trim();
+  if (!text) return { error: "Message vide." };
+  let [conv] = await sql<{ id: string }[]>`
+    select id from conversations where client_id = ${userId} and is_support limit 1
+  `;
+  if (!conv) {
+    [conv] = await sql<{ id: string }[]>`
+      insert into conversations (client_id, is_support) values (${userId}, true) returning id
+    `;
+  }
+  await sql`insert into messages (conversation_id, sender_id, body, from_team)
+    values (${conv.id}, ${me.id}, ${text}, true)`;
+  await sql`update conversations set last_message_at = now() where id = ${conv.id}`;
+  await sql`select notify_user(${userId}, 'new_message', ${TEAM}, ${text.slice(0, 120)},
+    ${sql.json({ conversation_id: conv.id })})`;
+  await pushUser(userId, { title: TEAM, body: text.slice(0, 90), url: `/messages/${conv.id}` });
+  return { id: conv.id };
+}
+
+/** Admin : diffuse une annonce a TOUS les utilisateurs (via leur fil de support). */
+export async function broadcastToUsers(body: string): Promise<{ sent?: number; error?: string }> {
+  const me = await getUser();
+  if (!me || me.role !== "admin") return { error: "Acces refuse." };
+  const text = body.trim();
+  if (!text) return { error: "Message vide." };
+  const users = await sql<{ id: string }[]>`select id from users where role <> 'admin'`;
+  for (const u of users) {
+    let [conv] = await sql<{ id: string }[]>`
+      select id from conversations where client_id = ${u.id} and is_support limit 1
+    `;
+    if (!conv) {
+      [conv] = await sql<{ id: string }[]>`
+        insert into conversations (client_id, is_support) values (${u.id}, true) returning id
+      `;
+    }
+    await sql`insert into messages (conversation_id, sender_id, body, from_team)
+      values (${conv.id}, ${me.id}, ${text}, true)`;
+    await sql`update conversations set last_message_at = now() where id = ${conv.id}`;
+    await sql`select notify_user(${u.id}, 'new_message', ${TEAM}, ${text.slice(0, 120)},
+      ${sql.json({ conversation_id: conv.id })})`;
+    await pushUser(u.id, { title: TEAM, body: text.slice(0, 90), url: `/messages/${conv.id}` });
+  }
+  return { sent: users.length };
+}
 
 /**
  * Ouvre (ou cree) la conversation entre le client courant et un vendeur.
@@ -73,23 +178,45 @@ export async function sendMessage(input: {
   const part = await getParticipation(parsed.data.conversationId);
   if (!part) return { error: "Conversation introuvable." };
 
+  const convId = parsed.data.conversationId;
+  const text = parsed.data.body.trim();
+  // Un admin qui ecrit dans un fil de support parle au nom de l'equipe.
+  const fromTeam = part.isSupport && part.isAdmin;
+
   await sql`
-    insert into messages (conversation_id, sender_id, body)
-    values (${parsed.data.conversationId}, ${part.userId}, ${parsed.data.body.trim()})
+    insert into messages (conversation_id, sender_id, body, from_team)
+    values (${convId}, ${part.userId}, ${text}, ${fromTeam})
   `;
-  await sql`update conversations set last_message_at = now() where id = ${parsed.data.conversationId}`;
+  await sql`update conversations set last_message_at = now() where id = ${convId}`;
 
-  // Notifie l'autre partie
-  const recipient = part.isClient ? part.vendor_user : part.client_id;
-  await sql`select notify_user(${recipient}, 'new_message', 'Nouveau message',
-    'Vous avez recu un nouveau message.', ${sql.json({ conversation_id: parsed.data.conversationId })})`;
-  await pushUser(recipient, {
-    title: "Nouveau message",
-    body: parsed.data.body.trim().slice(0, 90),
-    url: `/messages/${parsed.data.conversationId}`,
-  });
+  if (part.isSupport) {
+    if (fromTeam) {
+      // Equipe -> client
+      await sql`select notify_user(${part.client_id}, 'new_message', 'Equipe de DALOA HUB',
+        ${text.slice(0, 120)}, ${sql.json({ conversation_id: convId })})`;
+      await pushUser(part.client_id, {
+        title: "Equipe de DALOA HUB",
+        body: text.slice(0, 90),
+        url: `/messages/${convId}`,
+      });
+    } else {
+      // Client -> service client : reponse automatique de l'agent IA
+      await replySupportAI(convId, part.client_id);
+    }
+  } else {
+    const recipient = part.isClient ? part.vendor_user : part.client_id;
+    if (recipient) {
+      await sql`select notify_user(${recipient}, 'new_message', 'Nouveau message',
+        'Vous avez recu un nouveau message.', ${sql.json({ conversation_id: convId })})`;
+      await pushUser(recipient, {
+        title: "Nouveau message",
+        body: text.slice(0, 90),
+        url: `/messages/${convId}`,
+      });
+    }
+  }
 
-  revalidatePath(`/messages/${parsed.data.conversationId}`);
+  revalidatePath(`/messages/${convId}`);
   return {};
 }
 

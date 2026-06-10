@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 
 interface Msg {
   id: string;
-  sender_id: string;
+  sender_id: string | null;
   body: string | null;
   created_at: string;
   read_at?: string | null;

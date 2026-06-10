@@ -3,8 +3,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { MessagesSquare } from "lucide-react";
+import { MessagesSquare, Headset } from "lucide-react";
 import { initials, cn } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { ConversationRow } from "@/lib/queries/chat";
 
 export function ConversationList({ conversations }: { conversations: ConversationRow[] }) {
@@ -35,7 +36,11 @@ export function ConversationList({ conversations }: { conversations: Conversatio
                 active ? "bg-primary/10" : "bg-card hover:bg-secondary/60",
               )}
             >
-              {c.other_avatar ? (
+              {c.is_support ? (
+                <span className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-orange text-white">
+                  <Headset className="size-5" />
+                </span>
+              ) : c.other_avatar ? (
                 <Image src={c.other_avatar} alt={c.other_name} width={48} height={48} className="size-12 rounded-full object-cover" />
               ) : (
                 <span className="flex size-12 items-center justify-center rounded-full bg-brand-gradient text-sm font-bold text-white">
@@ -43,7 +48,10 @@ export function ConversationList({ conversations }: { conversations: Conversatio
                 </span>
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{c.other_name}</p>
+                <p className="flex items-center gap-1 truncate font-medium">
+                  {c.other_name}
+                  {c.is_support && <VerifiedBadge />}
+                </p>
                 <p className="truncate text-sm text-muted-foreground">{c.last_body ?? "Nouvelle conversation"}</p>
               </div>
               {c.unread > 0 && (

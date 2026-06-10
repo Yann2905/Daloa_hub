@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, MessagesSquare } from "lucide-react";
 import { listMyConversations } from "@/lib/queries/chat";
 import { ConversationList } from "@/components/chat/conversation-list";
+import { SupportButton } from "@/components/chat/support-button";
 import { AutoRefresh } from "@/components/util/auto-refresh";
 
 export const metadata = { title: "Messages" };
@@ -21,14 +22,18 @@ export default async function MessagesPage() {
           <h1 className="text-lg font-bold">Messages</h1>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="p-3">
+            <SupportButton className="w-full" />
+          </div>
           <ConversationList conversations={conversations} />
         </div>
       </div>
 
       {/* Desktop : invite a choisir (la liste est dans le panneau gauche) */}
-      <div className="hidden flex-1 flex-col items-center justify-center gap-3 text-center text-muted-foreground lg:flex">
+      <div className="hidden flex-1 flex-col items-center justify-center gap-4 p-8 text-center text-muted-foreground lg:flex">
         <MessagesSquare className="size-12" />
         <p>Selectionnez une conversation pour commencer.</p>
+        <SupportButton className="max-w-sm" />
       </div>
     </>
   );

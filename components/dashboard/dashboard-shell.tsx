@@ -16,6 +16,7 @@ import {
   ShoppingBag,
   FileText,
   MessagesSquare,
+  Headset,
   type LucideIcon,
 } from "lucide-react";
 import { Logo } from "@/components/site/logo";
@@ -38,6 +39,7 @@ const ICONS = {
   ShoppingBag,
   FileText,
   MessagesSquare,
+  Headset,
 } satisfies Record<string, LucideIcon>;
 
 export type IconName = keyof typeof ICONS;
