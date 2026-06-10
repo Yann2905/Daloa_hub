@@ -1,38 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Truck, ShieldCheck, MapPin, Search, Sparkles } from "lucide-react";
 import { listProducts } from "@/lib/queries/products";
-import { CATEGORIES } from "@/lib/constants";
 import { ProductCard } from "@/components/product/product-card";
+import { CategorySelect } from "@/components/product/category-select";
 import { Button } from "@/components/ui/button";
 
 export const dynamic = "force-dynamic";
-
-// Palette de degrades repartie sur les categories (du peps !)
-const CAT_PALETTE = [
-  "from-pink-500 to-rose-500",
-  "from-amber-500 to-orange-500",
-  "from-fuchsia-500 to-pink-600",
-  "from-yellow-500 to-amber-600",
-  "from-orange-500 to-red-500",
-  "from-sky-500 to-blue-600",
-  "from-cyan-500 to-teal-600",
-  "from-violet-500 to-purple-600",
-  "from-indigo-500 to-blue-700",
-  "from-emerald-500 to-green-600",
-  "from-teal-500 to-emerald-700",
-  "from-rose-500 to-red-600",
-  "from-blue-500 to-indigo-600",
-  "from-purple-500 to-fuchsia-600",
-  "from-lime-500 to-green-600",
-  "from-red-500 to-orange-600",
-  "from-green-500 to-teal-600",
-  "from-slate-500 to-gray-700",
-  "from-zinc-600 to-slate-800",
-  "from-stone-500 to-amber-700",
-  "from-cyan-500 to-sky-600",
-  "from-violet-600 to-indigo-700",
-  "from-pink-500 to-purple-600",
-];
 
 export default async function HomePage() {
   const { products } = await listProducts({ inStock: true, pageSize: 12 });
@@ -120,24 +93,8 @@ export default async function HomePage() {
 
       {/* Categories */}
       <section>
-        <h2 className="mb-4 text-2xl font-bold tracking-tight">Parcourir par categorie</h2>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-          {CATEGORIES.map((c, i) => (
-            <Link
-              key={c.slug}
-              href={`/produits?categorie=${c.slug}`}
-              className="group relative flex flex-col items-center gap-2 overflow-hidden rounded-2xl border bg-card p-5 text-center shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-card animate-in"
-              style={{ animationDelay: `${i * 60}ms` }}
-            >
-              <span
-                className={`flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br ${CAT_PALETTE[i % CAT_PALETTE.length]} text-sm font-bold text-white shadow-soft transition-transform duration-300 group-hover:scale-110`}
-              >
-                {c.label.slice(0, 2)}
-              </span>
-              <span className="text-sm font-medium">{c.label}</span>
-            </Link>
-          ))}
-        </div>
+        <h2 className="mb-3 text-2xl font-bold tracking-tight">Parcourir par categorie</h2>
+        <CategorySelect />
       </section>
 
       {/* Produits */}
