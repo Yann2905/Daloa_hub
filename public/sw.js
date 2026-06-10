@@ -5,7 +5,7 @@
  * - Stale-while-revalidate pour les assets statiques
  * - Reception des notifications push
  */
-const CACHE_VERSION = "daloa-hub-v1";
+const CACHE_VERSION = "daloa-hub-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const OFFLINE_URL = "/offline";
