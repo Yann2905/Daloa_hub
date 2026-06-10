@@ -30,10 +30,10 @@ export function SupportButton({ className }: { className?: string }) {
         className,
       )}
     >
-      <span className="flex size-11 items-center justify-center rounded-xl bg-gradient-to-br from-brand-green to-brand-orange text-white">
+      <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-green to-brand-orange text-white">
         {pending ? <Loader2 className="size-5 animate-spin" /> : <Headset className="size-5" />}
       </span>
-      <span className="min-w-0">
+      <span className="min-w-0 flex-1">
         <span className="block font-semibold">Service client</span>
         <span className="block truncate text-xs text-muted-foreground">
           Une question ? L&apos;assistant DALOA HUB vous repond tout de suite.

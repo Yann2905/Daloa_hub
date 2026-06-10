@@ -19,7 +19,7 @@ export default function StoreLayout({
             Livraison rapide a Daloa · Paiement a la livraison · Negociez les prix en direct
           </div>
           <SiteHeader />
-          <main className="bg-mesh flex-1 pb-4">{children}</main>
+          <main className="bg-mesh min-w-0 flex-1 overflow-x-hidden pb-4">{children}</main>
           <SiteFooter />
           <BottomNav />
         </div>
