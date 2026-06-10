@@ -23,6 +23,7 @@ import { Logo } from "@/components/site/logo";
 import { LogoutButton } from "@/components/auth/logout-button";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { PushRegister } from "@/components/push/push-register";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 // Les composants d'icone (fonctions) ne peuvent pas etre passes d'un Server
@@ -94,7 +95,7 @@ export function DashboardShell({
     <div className="bg-mesh flex min-h-dvh">
       <PushRegister />
       {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r bg-white p-4 md:flex">
+      <aside className="hidden w-64 shrink-0 flex-col border-r bg-card p-4 md:flex">
         <div className="mb-6">
           <Logo />
           <p className="mt-1 text-xs font-medium uppercase tracking-wide text-brand-green">
@@ -111,7 +112,7 @@ export function DashboardShell({
       {open && (
         <div className="fixed inset-0 z-50 md:hidden">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-white p-4">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col bg-card p-4">
             <div className="mb-6 flex items-center justify-between">
               <Logo />
               <button onClick={() => setOpen(false)} aria-label="Fermer">
@@ -127,12 +128,13 @@ export function DashboardShell({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-14 items-center gap-3 border-b bg-white px-4">
+        <header className="flex h-14 items-center gap-3 border-b bg-card px-4">
           <button onClick={() => setOpen(true)} aria-label="Menu" className="md:hidden">
             <Menu className="size-5" />
           </button>
           <span className="font-semibold md:hidden">{title}</span>
-          <div className="ml-auto">
+          <div className="ml-auto flex items-center gap-1">
+            <ThemeToggle />
             <NotificationBell />
           </div>
         </header>
