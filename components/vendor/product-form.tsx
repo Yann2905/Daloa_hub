@@ -77,9 +77,9 @@ export function ProductForm({
     <form onSubmit={submit} className="max-w-2xl space-y-4">
       <div className="space-y-2">
         <Label>Images du produit</Label>
-        <ImageUploader bucket="products" value={images} onChange={setImages} max={6} />
+        <ImageUploader bucket="products" value={images} onChange={setImages} max={5} />
         <p className="text-xs text-muted-foreground">
-          Jusqu&apos;a 6 photos. La 1re est l&apos;image principale ; le client pourra faire defiler les autres.
+          Jusqu&apos;a 5 photos. La 1re est l&apos;image principale ; le client pourra faire defiler les autres.
         </p>
       </div>
 

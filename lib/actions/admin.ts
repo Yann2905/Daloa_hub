@@ -6,6 +6,7 @@ import { getUser } from "@/lib/auth";
 import { emailUser } from "@/lib/email";
 import { smsUser } from "@/lib/sms";
 import { pushUser } from "@/lib/push";
+import { reconcileVendorProducts } from "@/lib/vendor-limits";
 import { signedDocumentUrl } from "@/lib/cloudinary-server";
 
 type Result = { error?: string };
@@ -194,19 +195,62 @@ export async function setVendorVerified(
   verified: boolean,
 ): Promise<Result> {
   await ensureAdmin();
-  await sql`update vendors set verified = ${verified} where id = ${vendorId}`;
-  if (verified) {
-    const [v] = await sql<{ user_id: string }[]>`select user_id from vendors where id = ${vendorId}`;
-    if (v) {
+  const [v] = verified
+    ? await sql<{ user_id: string; product_limit: number }[]>`
+        update vendors set verified = true, product_limit = greatest(product_limit, 30)
+        where id = ${vendorId} returning user_id, product_limit`
+    : await sql<{ user_id: string; product_limit: number }[]>`
+        update vendors set verified = false, product_limit = 15
+        where id = ${vendorId} returning user_id, product_limit`;
+  const userId = v?.user_id;
+  const newLimit = v?.product_limit ?? (verified ? 30 : 15);
+  if (userId) await reconcileVendorProducts(vendorId, newLimit);
+
+  if (userId) {
+    if (verified) {
       await sql`insert into notifications (user_id, type, title, body)
-        values (${v.user_id}, 'vendor_approved', ${"Boutique certifiee"},
-        ${"Felicitations ! Votre boutique est desormais certifiee DALOA HUB (badge bleu)."})`;
-      await pushUser(v.user_id, {
+        values (${userId}, 'vendor_approved', ${"Boutique certifiee"},
+        ${`Felicitations ! Votre boutique est certifiee DALOA HUB (badge bleu). Vous pouvez avoir jusqu'a ${newLimit} produits actifs.`})`;
+      await pushUser(userId, {
         title: "Boutique certifiee",
-        body: "Votre boutique a recu le badge certifie DALOA HUB.",
+        body: `Badge certifie + jusqu'a ${newLimit} produits.`,
         url: "/vendeur",
       });
+    } else {
+      await sql`insert into notifications (user_id, type, title, body)
+        values (${userId}, 'report_received', ${"Certification retiree"},
+        ${"Votre boutique n'est plus certifiee. Limite ramenee a 15 produits actifs ; les produits en trop ont ete desactives."})`;
+      await pushUser(userId, {
+        title: "Certification retiree",
+        body: "Limite ramenee a 15 produits actifs.",
+        url: "/vendeur/produits",
+      });
     }
+  }
+  revalidatePath("/admin/vendeurs");
+  return {};
+}
+
+/** Definit une limite de produits personnalisee pour une boutique (controle admin). */
+export async function setVendorProductLimit(
+  vendorId: string,
+  limit: number,
+): Promise<Result> {
+  await ensureAdmin();
+  const n = Math.max(0, Math.min(1000, Math.floor(limit)));
+  const [v] = await sql<{ user_id: string }[]>`
+    update vendors set product_limit = ${n} where id = ${vendorId} returning user_id`;
+  const userId = v?.user_id;
+  if (userId) await reconcileVendorProducts(vendorId, n);
+  if (userId) {
+    await sql`insert into notifications (user_id, type, title, body)
+      values (${userId}, 'vendor_approved', ${"Limite de produits mise a jour"},
+      ${`Vous pouvez desormais avoir jusqu'a ${n} produits actifs.`})`;
+    await pushUser(userId, {
+      title: "Limite de produits mise a jour",
+      body: `Jusqu'a ${n} produits actifs.`,
+      url: "/vendeur/produits",
+    });
   }
   revalidatePath("/admin/vendeurs");
   return {};

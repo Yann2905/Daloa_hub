@@ -3,6 +3,7 @@ import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { VendorValidation } from "@/components/admin/admin-actions";
 import { CertifyToggle } from "@/components/admin/certify-toggle";
+import { ProductLimitControl } from "@/components/admin/product-limit-control";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 export const metadata = { title: "Validation vendeurs" };
@@ -41,7 +42,8 @@ export default async function AdminVendorsPage() {
               </div>
               <Badge variant={badge(v.status)}>{label(v.status)}</Badge>
             </div>
-            <div className="mt-3 flex justify-end gap-2">
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
+              <ProductLimitControl vendorId={v.id} limit={v.product_limit ?? 15} />
               <CertifyToggle vendorId={v.id} verified={v.verified} />
               <VendorValidation vendorId={v.id} status={v.status} />
             </div>

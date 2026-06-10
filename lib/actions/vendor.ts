@@ -5,6 +5,7 @@ import { z } from "zod";
 import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 import { signedDocumentUrl } from "@/lib/cloudinary-server";
+import { countActiveProducts } from "@/lib/vendor-limits";
 import {
   SUBSCRIPTION_AMOUNT_FCFA,
   SUBSCRIPTION_PERIOD_DAYS,
@@ -31,7 +32,7 @@ const productSchema = z.object({
   category_id: z.string().uuid().optional().or(z.literal("")),
   is_bulky: z.boolean().optional(),
   is_active: z.boolean().optional(),
-  images: z.array(z.string().url()).optional(),
+  images: z.array(z.string().url()).max(5).optional(),
   options: z
     .array(z.object({ name: z.string().min(1), values: z.array(z.string().min(1)).min(1) }))
     .optional(),
@@ -43,6 +44,18 @@ export async function createProduct(input: unknown): Promise<VResult> {
   if (!parsed.success) return { error: parsed.error.errors[0].message };
   const { images, category_id, name, description, price, compare_at_price, options, stock, is_bulky, is_active } =
     parsed.data;
+
+  // Limite de produits actifs de la boutique
+  const [lim] = await sql<{ product_limit: number }[]>`
+    select product_limit from vendors where id = ${vendorId}
+  `;
+  const limit = lim?.product_limit ?? 15;
+  const active = await countActiveProducts(vendorId);
+  if (active >= limit) {
+    return {
+      error: `Limite atteinte : ${limit} produits actifs maximum. Desactivez ou supprimez un produit (ou faites certifier votre boutique).`,
+    };
+  }
   // Le prix barre n'a de sens que s'il est superieur au prix de vente.
   const compareAt = compare_at_price && compare_at_price > price ? compare_at_price : null;
 
@@ -117,7 +130,21 @@ export async function toggleProductActive(
   isActive: boolean,
 ): Promise<VResult> {
   const { vendorId } = await requireVendor();
-  await sql`update products set is_active = ${isActive}
+  if (isActive) {
+    // Activer : interdit si la limite d'actifs est deja atteinte
+    const [lim] = await sql<{ product_limit: number }[]>`
+      select product_limit from vendors where id = ${vendorId}
+    `;
+    const limit = lim?.product_limit ?? 15;
+    const active = await countActiveProducts(vendorId);
+    if (active >= limit) {
+      return {
+        error: `Limite de ${limit} produits actifs atteinte. Desactivez d'abord un autre produit.`,
+      };
+    }
+  }
+  // Toute bascule manuelle annule le drapeau "desactive par le systeme"
+  await sql`update products set is_active = ${isActive}, deactivated_by_limit = false
             where id = ${productId} and vendor_id = ${vendorId}`;
   revalidatePath("/vendeur/produits");
   return {};

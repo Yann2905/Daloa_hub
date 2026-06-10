@@ -23,7 +23,8 @@ export function ProductRow({
 
   function onToggle() {
     startTransition(async () => {
-      await toggleProductActive(product.id, !product.is_active);
+      const res = await toggleProductActive(product.id, !product.is_active);
+      if (res.error) toast({ title: res.error, variant: "error" });
     });
   }
 

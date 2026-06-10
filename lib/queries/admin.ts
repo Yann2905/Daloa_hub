@@ -98,7 +98,8 @@ export interface VendorAdminRow extends Vendor {
 export async function listVendorsForAdmin(): Promise<VendorAdminRow[]> {
   return await sql<VendorAdminRow[]>`
     select v.id, v.user_id, v.shop_name, v.description, v.logo_url, v.status,
-           v.address, v.lat, v.lng, v.verified, v.rating_avg::float8 as rating_avg,
+           v.address, v.lat, v.lng, v.verified, v.product_limit,
+           v.rating_avg::float8 as rating_avg,
            v.rating_count, v.created_at, v.updated_at,
            json_build_object('full_name', u.full_name, 'phone', u.phone) as profiles
     from vendors v join users u on u.id = v.user_id

@@ -65,6 +65,7 @@ export interface Vendor {
   delivers_self: boolean;
   self_delivery_fee: number | null;
   verified: boolean;
+  product_limit: number;
   rating_avg: number;
   rating_count: number;
   created_at: string;

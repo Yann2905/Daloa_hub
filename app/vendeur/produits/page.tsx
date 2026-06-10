@@ -9,17 +9,35 @@ export default async function VendorProductsPage() {
   if (!vendor) return null;
 
   const products = await listVendorProductsWithImages(vendor.id);
+  const activeCount = products.filter((p) => p.is_active).length;
+  const limit = vendor.product_limit ?? 15;
+  const atLimit = activeCount >= limit;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Produits</h1>
-        <Button asChild>
-          <Link href="/vendeur/produits/nouveau">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Produits</h1>
+          <p className="text-sm text-muted-foreground">
+            <span className={atLimit ? "font-semibold text-amber-600" : "font-semibold text-primary"}>
+              {activeCount}/{limit}
+            </span>{" "}
+            actifs{vendor.verified ? " (boutique certifiee)" : ""}
+          </p>
+        </div>
+        <Button asChild disabled={atLimit}>
+          <Link href={atLimit ? "#" : "/vendeur/produits/nouveau"}>
             <Plus className="size-4" /> Ajouter
           </Link>
         </Button>
       </div>
+
+      {atLimit && (
+        <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-800">
+          Limite de {limit} produits actifs atteinte. Desactivez ou supprimez un produit pour en ajouter
+          {!vendor.verified && ", ou faites certifier votre boutique"}.
+        </p>
+      )}
 
       {products.length === 0 ? (
         <div className="flex flex-col items-center gap-4 rounded-lg border border-dashed py-16 text-center">
