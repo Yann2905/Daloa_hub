@@ -4,19 +4,22 @@ import {
   getMyVendor,
   getVendorStats,
   getActiveSubscription,
+  getVendorDailyOrders,
 } from "@/lib/queries/vendor";
 import { formatFcfa, formatDate } from "@/lib/utils";
 import { SUBSCRIPTION_EXPIRED_MESSAGE } from "@/lib/constants";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { BarChart } from "@/components/dashboard/bar-chart";
 import { Button } from "@/components/ui/button";
 
 export default async function VendorDashboard() {
   const vendor = await getMyVendor();
   if (!vendor) return null;
 
-  const [stats, sub] = await Promise.all([
+  const [stats, sub, dailyOrders] = await Promise.all([
     getVendorStats(vendor.id),
     getActiveSubscription(vendor.id),
+    getVendorDailyOrders(vendor.id),
   ]);
 
   const subActive = sub?.status === "active" && new Date(sub.end_date) > new Date();
@@ -108,6 +111,10 @@ export default async function VendorDashboard() {
         <StatCard label="En attente" value={stats.pendingOrders} icon={Clock} />
         <StatCard label="Revenus livres" value={formatFcfa(stats.revenue)} icon={Wallet} />
       </div>
+
+      {dailyOrders.length > 0 && (
+        <BarChart data={dailyOrders} title="Commandes (14 derniers jours)" />
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="rounded-lg border bg-card p-4">

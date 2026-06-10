@@ -8,6 +8,7 @@ import type {
   Subscription,
 } from "@/lib/database.types";
 
+
 export interface PlatformStats {
   users: number;
   vendorsActive: number;

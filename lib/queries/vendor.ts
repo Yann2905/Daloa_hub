@@ -16,6 +16,20 @@ const VENDOR_COLS = sql`
   rating_avg::float8 as rating_avg, rating_count, created_at, updated_at
 `;
 
+/** Commandes par jour sur les 14 derniers jours (pour le graphique vendeur). */
+export async function getVendorDailyOrders(vendorId: string): Promise<{ label: string; value: number }[]> {
+  try {
+    return await sql<{ label: string; value: number }[]>`
+      select to_char(d.day, 'DD/MM') as label, coalesce(count(o.id), 0)::int as value
+      from generate_series(current_date - interval '13 days', current_date, interval '1 day') as d(day)
+      left join orders o on o.vendor_id = ${vendorId} and o.created_at::date = d.day::date
+      group by d.day order by d.day
+    `;
+  } catch {
+    return [];
+  }
+}
+
 export async function getMyVendor(): Promise<Vendor | null> {
   const user = await getUser();
   if (!user) return null;
