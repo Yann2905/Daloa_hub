@@ -13,11 +13,13 @@ export function NegotiateButton({
   productId,
   productName,
   price,
+  label = "Negocier le prix",
 }: {
   vendorId: string;
   productId?: string;
   productName?: string;
   price?: number;
+  label?: string;
 }) {
   const router = useRouter();
   const { toast } = useToast();
@@ -37,7 +39,7 @@ export function NegotiateButton({
   return (
     <Button variant="royal" onClick={go} disabled={pending} size="lg" className="w-full">
       {pending ? <Loader2 className="size-4 animate-spin" /> : <MessageCircle className="size-4" />}
-      Negocier le prix
+      {label}
     </Button>
   );
 }
