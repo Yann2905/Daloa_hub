@@ -37,6 +37,7 @@ export function SiteFooter() {
         <div className="container flex flex-col items-center justify-between gap-2 text-xs text-muted-foreground sm:flex-row">
           <p>&copy; {new Date().getFullYear()} DALOA HUB. Tous droits reserves.</p>
           <nav className="flex items-center gap-4">
+            <Link href="/aide" className="hover:text-brand-green">Aide</Link>
             <Link href="/cgu" className="hover:text-brand-green">CGU</Link>
             <Link href="/confidentialite" className="hover:text-brand-green">Confidentialite</Link>
           </nav>
