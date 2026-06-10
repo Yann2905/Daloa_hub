@@ -26,6 +26,7 @@ import {
   DriverValidation,
   ViewDocument,
 } from "@/components/admin/admin-actions";
+import { DeleteUserButton } from "@/components/admin/delete-user-button";
 import type { OrderStatus } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
@@ -85,6 +86,9 @@ export default async function AdminUserDetailPage({
             <RoleChanger userId={profile.id} role={profile.role} />
           </div>
           <NotifyUser userId={profile.id} />
+          <div className="border-t pt-3">
+            <DeleteUserButton userId={profile.id} name={profile.full_name} />
+          </div>
         </div>
       )}
 

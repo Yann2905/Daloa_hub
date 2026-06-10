@@ -141,6 +141,32 @@ export async function changeUserRole(
   return {};
 }
 
+// ---------------- Suppression d'un utilisateur (definitive, cascade) ----------------
+export async function deleteUser(userId: string): Promise<Result> {
+  await ensureAdmin();
+  const me = await getUser();
+  if (me?.id === userId) return { error: "Vous ne pouvez pas supprimer votre propre compte." };
+
+  const [target] = await sql<{ role: string }[]>`select role from users where id = ${userId}`;
+  if (!target) return { error: "Utilisateur introuvable." };
+  if (target.role === "admin") return { error: "Impossible de supprimer un administrateur." };
+
+  try {
+    await sql.begin(async (tx) => {
+      // Les FK orders.client_id / orders.vendor_id sont en RESTRICT : on supprime
+      // d'abord les commandes liees (leurs lignes/historiques suivent en cascade).
+      await tx`delete from orders where client_id = ${userId}`;
+      await tx`delete from orders where vendor_id in (select id from vendors where user_id = ${userId})`;
+      // Le reste (boutique, livreur, messages, favoris, avis, tokens...) suit en cascade.
+      await tx`delete from users where id = ${userId}`;
+    });
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Suppression impossible." };
+  }
+  revalidatePath("/admin/utilisateurs");
+  return {};
+}
+
 // ---------------- Message admin -> utilisateur (notif + email) ----------------
 export async function notifyUser(
   userId: string,
