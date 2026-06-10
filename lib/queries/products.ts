@@ -38,6 +38,36 @@ export interface ProductPage {
   total: number;
 }
 
+/** Produits similaires (meme categorie) pour la fiche produit. */
+export async function listSimilarProducts(
+  productId: string,
+  categoryId: string | null,
+  limit = 12,
+): Promise<ProductWithImages[]> {
+  try {
+    const rows = await sql<(ProductWithImages & { total_count: number })[]>`
+      select ${PRODUCT_SELECT}
+      from products p
+      join vendors v on v.id = p.vendor_id
+      left join categories c on c.id = p.category_id
+      left join product_images pi on pi.product_id = p.id
+      where p.is_active = true and v.status = 'approved'
+        and v.lat is not null and v.lng is not null
+        and p.stock > 0 and p.id <> ${productId}
+        ${categoryId ? sql`and p.category_id = ${categoryId}` : sql``}
+      group by p.id, c.id, v.id
+      order by p.created_at desc
+      limit ${limit}
+    `;
+    return rows.map(({ total_count, ...p }) => {
+      void total_count;
+      return p as ProductWithImages;
+    });
+  } catch {
+    return [];
+  }
+}
+
 /** Produits favoris d'un utilisateur (les plus recents en premier). */
 export async function listFavorites(userId: string): Promise<ProductWithImages[]> {
   try {

@@ -35,7 +35,7 @@ export function SupportButton({ className }: { className?: string }) {
       </span>
       <span className="min-w-0 flex-1">
         <span className="block font-semibold">Service client</span>
-        <span className="block truncate text-xs text-muted-foreground">
+        <span className="line-clamp-2 text-xs text-muted-foreground">
           Une question ? L&apos;assistant DALOA HUB vous repond tout de suite.
         </span>
       </span>

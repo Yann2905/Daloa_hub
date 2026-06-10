@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, Store, BadgeCheck } from "lucide-react";
-import { getProduct } from "@/lib/queries/products";
+import { getProduct, listSimilarProducts } from "@/lib/queries/products";
 import { listProductReviews, getReviewEligibility } from "@/lib/queries/reviews";
 import { getUser } from "@/lib/auth";
 import { formatFcfa, formatDate, initials } from "@/lib/utils";
 import { BuyBox } from "@/components/product/buy-box";
+import { ProductCard } from "@/components/product/product-card";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { FavoriteButton } from "@/components/product/favorite-button";
 import { ReviewForm } from "@/components/product/review-form";
@@ -62,6 +63,7 @@ export default async function ProductDetailPage({
   const cover = images[0];
 
   const user = await getUser();
+  const similar = await listSimilarProducts(id, product.category_id, 12);
   const reviews = await listProductReviews(id);
   const eligibility = user
     ? await getReviewEligibility(id, user.id)
@@ -237,6 +239,20 @@ export default async function ProductDetailPage({
           </ul>
         )}
       </section>
+
+      {/* Produits similaires (facon Jumia : rangee alignee) */}
+      {similar.length > 0 && (
+        <section className="space-y-3">
+          <h2 className="text-2xl font-bold tracking-tight">Produits similaires</h2>
+          <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-1">
+            {similar.map((p) => (
+              <div key={p.id} className="w-40 shrink-0 sm:w-48">
+                <ProductCard product={p} />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
