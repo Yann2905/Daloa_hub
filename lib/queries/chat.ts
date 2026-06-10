@@ -3,6 +3,7 @@ import { sql } from "@/lib/db";
 import { getUser } from "@/lib/auth";
 
 export const TEAM_NAME = "Equipe de DALOA HUB";
+export const ASSISTANT_NAME = "Assistant DALOA HUB";
 
 export interface ConversationRow {
   id: string;
@@ -12,6 +13,7 @@ export interface ConversationRow {
   last_body: string | null;
   unread: number;
   is_support: boolean;
+  support_kind: string | null;
 }
 
 /**
@@ -22,9 +24,15 @@ export async function getParticipation(conversationId: string) {
   const user = await getUser();
   if (!user) return null;
   const [c] = await sql<
-    { client_id: string; vendor_user: string | null; vendor_id: string | null; is_support: boolean }[]
+    {
+      client_id: string;
+      vendor_user: string | null;
+      vendor_id: string | null;
+      is_support: boolean;
+      support_kind: string | null;
+    }[]
   >`
-    select c.client_id, c.vendor_id, c.is_support, v.user_id as vendor_user
+    select c.client_id, c.vendor_id, c.is_support, c.support_kind, v.user_id as vendor_user
     from conversations c left join vendors v on v.id = c.vendor_id
     where c.id = ${conversationId} limit 1
   `;
@@ -44,6 +52,7 @@ export async function getParticipation(conversationId: string) {
     isVendor,
     isAdmin,
     isSupport: c.is_support,
+    supportKind: c.support_kind,
     client_id: c.client_id,
     vendor_id: c.vendor_id,
     vendor_user: c.vendor_user,
@@ -56,8 +65,9 @@ export async function listMyConversations(): Promise<ConversationRow[]> {
   if (!user) return [];
   try {
     return await sql<ConversationRow[]>`
-      select c.id, c.last_message_at, c.is_support,
-        case when c.is_support then ${TEAM_NAME}
+      select c.id, c.last_message_at, c.is_support, c.support_kind,
+        case when c.is_support and c.support_kind = 'ai' then ${ASSISTANT_NAME}
+             when c.is_support then ${TEAM_NAME}
              when c.client_id = ${user.id} then vu.full_name
              else cu.full_name end as other_name,
         case when c.is_support then null
@@ -135,12 +145,13 @@ export interface SupportThreadRow {
   email: string;
   last_body: string | null;
   unread: number;
+  support_kind: string | null;
 }
 
 /** Tous les fils de service client (admin). Les "a traiter" en premier. */
 export async function listSupportThreads(): Promise<SupportThreadRow[]> {
   return await sql<SupportThreadRow[]>`
-    select c.id, c.needs_human, c.last_message_at, cu.full_name as client_name, cu.email,
+    select c.id, c.needs_human, c.support_kind, c.last_message_at, cu.full_name as client_name, cu.email,
       (select case when m.deleted_at is not null then 'Message supprime' else m.body end
         from messages m where m.conversation_id = c.id order by m.created_at desc limit 1) as last_body,
       (select count(*)::int from messages m where m.conversation_id = c.id
@@ -182,10 +193,12 @@ export async function getConversationHeader(conversationId: string) {
       vendor_id: string | null;
       is_support: boolean;
       is_client: boolean;
+      support_kind: string | null;
     }[]
   >`
-    select c.is_support, (c.client_id = ${user.id}) as is_client,
-           case when c.is_support and c.client_id = ${user.id} then ${TEAM_NAME}
+    select c.is_support, c.support_kind, (c.client_id = ${user.id}) as is_client,
+           case when c.is_support and c.support_kind = 'ai' then ${ASSISTANT_NAME}
+                when c.is_support and c.client_id = ${user.id} then ${TEAM_NAME}
                 when c.client_id = ${user.id} then vu.full_name
                 else cu.full_name end as other_name,
            case when c.is_support then null

@@ -355,6 +355,7 @@ create table if not exists conversations (
   client_id       uuid not null references users(id) on delete cascade,
   vendor_id       uuid references vendors(id) on delete cascade, -- null si support
   is_support      boolean not null default false,
+  support_kind    text, -- 'ai' (assistant) ou 'team' (Equipe DALOA HUB)
   needs_human     boolean not null default false,
   client_hidden_at timestamptz, -- "supprimee" cote client
   vendor_hidden_at timestamptz, -- "supprimee" cote vendeur
@@ -362,8 +363,8 @@ create table if not exists conversations (
   created_at      timestamptz not null default now(),
   unique (client_id, vendor_id)
 );
--- Un seul fil de support par utilisateur
-create unique index if not exists uniq_support_thread on conversations(client_id) where is_support;
+-- Un seul fil de support de chaque type (assistant / equipe) par utilisateur
+create unique index if not exists uniq_support_kind on conversations(client_id, support_kind) where is_support;
 create table if not exists messages (
   id              uuid primary key default gen_random_uuid(),
   conversation_id uuid not null references conversations(id) on delete cascade,

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { MessagesSquare, Headset } from "lucide-react";
+import { MessagesSquare, Headset, Bot } from "lucide-react";
 import { initials, cn } from "@/lib/utils";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { ConversationRow } from "@/lib/queries/chat";
@@ -36,7 +36,11 @@ export function ConversationList({ conversations }: { conversations: Conversatio
                 active ? "bg-primary/10" : "bg-card hover:bg-secondary/60",
               )}
             >
-              {c.is_support ? (
+              {c.is_support && c.support_kind === "ai" ? (
+                <span className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white">
+                  <Bot className="size-5" />
+                </span>
+              ) : c.is_support ? (
                 <span className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-orange text-white">
                   <Headset className="size-5" />
                 </span>
@@ -50,7 +54,10 @@ export function ConversationList({ conversations }: { conversations: Conversatio
               <div className="min-w-0 flex-1">
                 <p className="flex items-center gap-1 truncate font-medium">
                   {c.other_name}
-                  {c.is_support && <VerifiedBadge />}
+                  {c.support_kind === "team" && <VerifiedBadge />}
+                  {c.support_kind === "ai" && (
+                    <span className="rounded-full bg-sky-100 px-1.5 text-[10px] font-bold text-sky-700">IA</span>
+                  )}
                 </p>
                 <p className="truncate text-sm text-muted-foreground">{c.last_body ?? "Nouvelle conversation"}</p>
               </div>

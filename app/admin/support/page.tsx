@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Headset, AlertTriangle } from "lucide-react";
+import { Headset, AlertTriangle, Bot } from "lucide-react";
 import { requireRole } from "@/lib/auth";
 import { listSupportThreads } from "@/lib/queries/chat";
 import { formatDateTime } from "@/lib/utils";
@@ -37,11 +37,22 @@ export default async function AdminSupportPage() {
                   href={`/messages/${t.id}`}
                   className="flex items-center gap-3 rounded-xl border bg-card p-3 shadow-soft transition hover:border-primary/40"
                 >
-                  <span className="flex size-10 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-orange text-white">
-                    <Headset className="size-4" />
+                  <span
+                    className={`flex size-10 items-center justify-center rounded-full text-white ${
+                      t.support_kind === "ai"
+                        ? "bg-gradient-to-br from-sky-500 to-indigo-600"
+                        : "bg-gradient-to-br from-brand-green to-brand-orange"
+                    }`}
+                  >
+                    {t.support_kind === "ai" ? <Bot className="size-4" /> : <Headset className="size-4" />}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{t.client_name}</p>
+                    <p className="flex items-center gap-2 truncate font-medium">
+                      {t.client_name}
+                      <span className="rounded-full bg-secondary px-1.5 text-[10px] font-semibold text-muted-foreground">
+                        {t.support_kind === "ai" ? "Assistant IA" : "Equipe"}
+                      </span>
+                    </p>
                     <p className="truncate text-sm text-muted-foreground">{t.last_body}</p>
                     <p className="text-xs text-muted-foreground">{formatDateTime(t.last_message_at)}</p>
                   </div>

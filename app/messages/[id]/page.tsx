@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Headset } from "lucide-react";
+import { ArrowLeft, Headset, Bot } from "lucide-react";
 import {
   getParticipation,
   listMessages,
@@ -45,7 +45,11 @@ export default async function ConversationPage({
         <Link href="/messages" className="rounded-md p-1 hover:bg-secondary lg:hidden" aria-label="Retour">
           <ArrowLeft className="size-5" />
         </Link>
-        {header?.is_support ? (
+        {header?.is_support && header?.support_kind === "ai" ? (
+          <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-indigo-600 text-white">
+            <Bot className="size-4" />
+          </span>
+        ) : header?.is_support ? (
           <span className="flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-brand-green to-brand-orange text-white">
             <Headset className="size-4" />
           </span>
@@ -59,10 +63,14 @@ export default async function ConversationPage({
         <div className="min-w-0">
           <p className="flex items-center gap-1 truncate font-semibold leading-tight">
             {header?.other_name}
-            {header?.is_support && header?.is_client && <VerifiedBadge />}
+            {header?.support_kind === "team" && header?.is_client && <VerifiedBadge />}
           </p>
           <p className="truncate text-xs text-muted-foreground">
-            {header?.is_support ? "Service client - reponse rapide" : header?.shop_name}
+            {header?.support_kind === "ai"
+              ? "Assistant automatique - reponse immediate"
+              : header?.is_support
+                ? "Equipe officielle DALOA HUB"
+                : header?.shop_name}
           </p>
         </div>
         <div className="ml-auto">
