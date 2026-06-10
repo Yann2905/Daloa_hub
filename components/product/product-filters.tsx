@@ -6,7 +6,6 @@ import { Search } from "lucide-react";
 import { CATEGORIES } from "@/lib/constants";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 
 export function ProductFilters() {
   const router = useRouter();
@@ -49,29 +48,15 @@ export function ProductFilters() {
         />
       </div>
 
-      {/* Puces de categories */}
-      <div className="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
-        {[{ slug: "", label: "Tout" }, ...CATEGORIES].map((c) => {
-          const active = activeCat === c.slug;
-          return (
-            <button
-              key={c.slug || "all"}
-              type="button"
-              onClick={() => apply({ categorie: c.slug })}
-              className={cn(
-                "whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium transition-all active:scale-95",
-                active
-                  ? "border-transparent bg-gradient-to-r from-brand-green to-emerald-600 text-white shadow-soft"
-                  : "hover:border-primary/40 hover:text-primary",
-              )}
-            >
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <Select value={activeCat} onChange={(e) => apply({ categorie: e.target.value })}>
+          <option value="">Toutes les categories</option>
+          {CATEGORIES.map((c) => (
+            <option key={c.slug} value={c.slug}>
               {c.label}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            </option>
+          ))}
+        </Select>
         <Select value={params.get("tri") ?? "recent"} onChange={(e) => apply({ tri: e.target.value })}>
           <option value="recent">Plus recents</option>
           <option value="price_asc">Prix croissant</option>
