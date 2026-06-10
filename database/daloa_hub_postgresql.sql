@@ -94,6 +94,7 @@ create table if not exists vendors (
   lng          double precision,
   delivers_self      boolean not null default false,
   self_delivery_fee  integer,
+  verified           boolean not null default false,
   rating_avg   numeric(3,2) not null default 0,
   rating_count integer not null default 0,
   created_at   timestamptz not null default now(),
@@ -364,6 +365,7 @@ create table if not exists messages (
   body            text not null,
   product_id      uuid references products(id) on delete set null,
   read_at         timestamptz,
+  deleted_at      timestamptz,
   created_at      timestamptz not null default now()
 );
 create index if not exists idx_messages_conv on messages(conversation_id, created_at);

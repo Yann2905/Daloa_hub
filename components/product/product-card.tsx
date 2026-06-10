@@ -4,6 +4,7 @@ import { Star, ImageOff } from "lucide-react";
 import type { ProductWithImages } from "@/lib/database.types";
 import { formatFcfa } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { FavoriteButton } from "./favorite-button";
 
 export function ProductCard({ product }: { product: ProductWithImages }) {
@@ -50,8 +51,13 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
 
       <div className="flex flex-1 flex-col gap-1 p-3">
         <p className="line-clamp-2 text-sm font-medium leading-snug">{product.name}</p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {product.vendors && <span className="truncate">{product.vendors.shop_name}</span>}
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          {product.vendors && (
+            <span className="flex min-w-0 items-center gap-0.5">
+              <span className="truncate">{product.vendors.shop_name}</span>
+              {product.vendors.verified && <VerifiedBadge className="shrink-0 [&>svg]:size-3" />}
+            </span>
+          )}
           {product.rating_count > 0 && (
             <span className="flex shrink-0 items-center gap-0.5">
               <Star className="size-3 fill-amber-400 text-amber-400" />

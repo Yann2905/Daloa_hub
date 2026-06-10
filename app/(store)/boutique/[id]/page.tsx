@@ -7,6 +7,7 @@ import { ProductCard } from "@/components/product/product-card";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { ShareButton } from "@/components/share-button";
 import { initials } from "@/lib/utils";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { Vendor } from "@/lib/database.types";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,7 @@ export const dynamic = "force-dynamic";
 async function getShop(id: string) {
   const [vendor] = await sql<Vendor[]>`
     select id, user_id, shop_name, description, logo_url, status, address,
-           lat, lng, delivers_self, self_delivery_fee,
+           lat, lng, delivers_self, self_delivery_fee, verified,
            rating_avg::float8 as rating_avg, rating_count, created_at, updated_at
     from vendors where id = ${id} limit 1
   `;
@@ -75,7 +76,10 @@ export default async function ShopPage({
                 </span>
               )}
               <div className="pb-1">
-                <h1 className="text-2xl font-bold tracking-tight">{vendor.shop_name}</h1>
+                <h1 className="flex items-center gap-1.5 text-2xl font-bold tracking-tight">
+                  {vendor.shop_name}
+                  {vendor.verified && <VerifiedBadge label="Certifiee" className="text-base" />}
+                </h1>
                 <div className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                   {vendor.rating_count > 0 && (
                     <span className="flex items-center gap-1">

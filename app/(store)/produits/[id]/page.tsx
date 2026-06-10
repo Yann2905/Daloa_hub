@@ -12,6 +12,7 @@ import { ReviewForm } from "@/components/product/review-form";
 import { ShareButton } from "@/components/share-button";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { CategorySlug } from "@/lib/constants";
 
 export const dynamic = "force-dynamic";
@@ -123,6 +124,7 @@ export default async function ProductDetailPage({
           >
             <Store className="size-4 text-primary" />
             {product.vendors.shop_name}
+            {product.vendors.verified && <VerifiedBadge />}
           </Link>
         )}
 

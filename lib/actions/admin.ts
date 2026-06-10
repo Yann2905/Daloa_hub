@@ -162,6 +162,30 @@ export async function notifyUser(
   return {};
 }
 
+// ---------------- Certification boutique ----------------
+export async function setVendorVerified(
+  vendorId: string,
+  verified: boolean,
+): Promise<Result> {
+  await ensureAdmin();
+  await sql`update vendors set verified = ${verified} where id = ${vendorId}`;
+  if (verified) {
+    const [v] = await sql<{ user_id: string }[]>`select user_id from vendors where id = ${vendorId}`;
+    if (v) {
+      await sql`insert into notifications (user_id, type, title, body)
+        values (${v.user_id}, 'vendor_approved', ${"Boutique certifiee"},
+        ${"Felicitations ! Votre boutique est desormais certifiee DALOA HUB (badge bleu)."})`;
+      await pushUser(v.user_id, {
+        title: "Boutique certifiee",
+        body: "Votre boutique a recu le badge certifie DALOA HUB.",
+        url: "/vendeur",
+      });
+    }
+  }
+  revalidatePath("/admin/vendeurs");
+  return {};
+}
+
 // ---------------- Moderation produit ----------------
 export async function setProductActiveAdmin(
   productId: string,

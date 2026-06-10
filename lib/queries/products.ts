@@ -29,7 +29,7 @@ const PRODUCT_SELECT = sql`
   case when c.id is not null
     then json_build_object('slug', c.slug, 'name', c.name) end as categories,
   json_build_object('id', v.id, 'shop_name', v.shop_name,
-    'rating_avg', v.rating_avg::float8) as vendors,
+    'rating_avg', v.rating_avg::float8, 'verified', v.verified) as vendors,
   count(*) over() as total_count
 `;
 
@@ -124,7 +124,7 @@ export async function getProduct(id: string): Promise<ProductWithImages | null> 
           then json_build_object('slug', c.slug, 'name', c.name) end as categories,
         json_build_object('id', v.id, 'shop_name', v.shop_name,
           'rating_avg', v.rating_avg::float8, 'lat', v.lat, 'lng', v.lng,
-          'address', v.address) as vendors
+          'address', v.address, 'verified', v.verified) as vendors
       from products p
       join vendors v on v.id = p.vendor_id
       left join categories c on c.id = p.category_id

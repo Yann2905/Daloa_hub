@@ -64,6 +64,7 @@ export interface Vendor {
   lng: number | null;
   delivers_self: boolean;
   self_delivery_fee: number | null;
+  verified: boolean;
   rating_avg: number;
   rating_count: number;
   created_at: string;
@@ -256,7 +257,7 @@ export interface PushSubscription {
 export interface ProductWithImages extends Product {
   product_images: ProductImage[];
   categories?: Pick<Category, "slug" | "name"> | null;
-  vendors?: Pick<Vendor, "id" | "shop_name" | "rating_avg"> | null;
+  vendors?: Pick<Vendor, "id" | "shop_name" | "rating_avg" | "verified"> | null;
 }
 
 export interface OrderWithItems extends Order {

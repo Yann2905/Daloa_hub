@@ -2,6 +2,8 @@ import { listVendorsForAdmin, type VendorAdminRow } from "@/lib/queries/admin";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { VendorValidation } from "@/components/admin/admin-actions";
+import { CertifyToggle } from "@/components/admin/certify-toggle";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 export const metadata = { title: "Validation vendeurs" };
 
@@ -28,7 +30,10 @@ export default async function AdminVendorsPage() {
           <div key={v.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-medium">{v.shop_name}</p>
+                <p className="flex items-center gap-1.5 font-medium">
+                  {v.shop_name}
+                  {v.verified && <VerifiedBadge />}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   {v.profiles?.full_name} - {v.profiles?.phone}
                 </p>
@@ -36,7 +41,8 @@ export default async function AdminVendorsPage() {
               </div>
               <Badge variant={badge(v.status)}>{label(v.status)}</Badge>
             </div>
-            <div className="mt-3 flex justify-end">
+            <div className="mt-3 flex justify-end gap-2">
+              <CertifyToggle vendorId={v.id} verified={v.verified} />
               <VendorValidation vendorId={v.id} status={v.status} />
             </div>
           </div>
