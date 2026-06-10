@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Package, ShoppingBag, Clock, Wallet, AlertTriangle, Star, MapPin } from "lucide-react";
+import { Package, ShoppingBag, Clock, Wallet, AlertTriangle, Star, MapPin, CheckCircle2, Circle } from "lucide-react";
 import {
   getMyVendor,
   getVendorStats,
@@ -20,6 +20,15 @@ export default async function VendorDashboard() {
   ]);
 
   const subActive = sub?.status === "active" && new Date(sub.end_date) > new Date();
+
+  // Guide de demarrage (premiers pas du vendeur)
+  const steps = [
+    { done: vendor.lat != null, label: "Definir la position de la boutique", href: "/vendeur/boutique" },
+    { done: !!vendor.logo_url, label: "Ajouter un logo de boutique", href: "/vendeur/boutique" },
+    { done: stats.productCount > 0, label: "Ajouter votre premier produit", href: "/vendeur/produits/nouveau" },
+    { done: subActive, label: "Activer votre abonnement", href: "/vendeur/abonnement" },
+  ];
+  const doneCount = steps.filter((s) => s.done).length;
 
   return (
     <div className="space-y-6">
@@ -61,6 +70,35 @@ export default async function VendorDashboard() {
           <Button asChild>
             <Link href="/vendeur/boutique">Definir la position</Link>
           </Button>
+        </div>
+      )}
+
+      {doneCount < steps.length && (
+        <div className="rounded-xl border bg-card p-4 shadow-soft">
+          <div className="flex items-center justify-between">
+            <p className="font-semibold">Bien demarrer</p>
+            <span className="text-sm text-muted-foreground">{doneCount}/{steps.length}</span>
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-secondary">
+            <div className="h-full rounded-full bg-gradient-to-r from-brand-green to-brand-orange transition-all" style={{ width: `${(doneCount / steps.length) * 100}%` }} />
+          </div>
+          <ul className="mt-3 space-y-2">
+            {steps.map((s) => (
+              <li key={s.label} className="flex items-center gap-2 text-sm">
+                {s.done ? (
+                  <>
+                    <CheckCircle2 className="size-4 shrink-0 text-primary" />
+                    <span className="text-muted-foreground line-through">{s.label}</span>
+                  </>
+                ) : (
+                  <>
+                    <Circle className="size-4 shrink-0 text-muted-foreground" />
+                    <Link href={s.href} className="font-medium hover:text-primary">{s.label}</Link>
+                  </>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 
