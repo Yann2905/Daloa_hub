@@ -72,7 +72,11 @@ export async function listMyConversations(): Promise<ConversationRow[]> {
       join users cu on cu.id = c.client_id
       left join vendors v on v.id = c.vendor_id
       left join users vu on vu.id = v.user_id
-      where c.client_id = ${user.id} or v.user_id = ${user.id}
+      where (c.client_id = ${user.id} or v.user_id = ${user.id})
+        and case
+          when c.client_id = ${user.id} then coalesce(c.client_hidden_at, 'epoch') < c.last_message_at
+          when v.user_id = ${user.id} then coalesce(c.vendor_hidden_at, 'epoch') < c.last_message_at
+          else true end
       order by c.last_message_at desc
     `;
   } catch {

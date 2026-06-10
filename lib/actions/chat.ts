@@ -234,6 +234,22 @@ export async function deleteMessage(messageId: string): Promise<{ error?: string
   return {};
 }
 
+/** Supprime une conversation pour l'utilisateur courant (elle reapparait s'il
+ * recoit un nouveau message). */
+export async function deleteConversation(conversationId: string): Promise<{ error?: string }> {
+  const part = await getParticipation(conversationId);
+  if (!part) return { error: "Conversation introuvable." };
+  if (part.isClient) {
+    await sql`update conversations set client_hidden_at = now() where id = ${conversationId}`;
+  } else if (part.isVendor) {
+    await sql`update conversations set vendor_hidden_at = now() where id = ${conversationId}`;
+  } else {
+    return { error: "Action non autorisee." };
+  }
+  revalidatePath("/messages");
+  return {};
+}
+
 export async function markConversationRead(conversationId: string): Promise<void> {
   const part = await getParticipation(conversationId);
   if (!part) return;

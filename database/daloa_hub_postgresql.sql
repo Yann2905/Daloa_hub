@@ -356,6 +356,8 @@ create table if not exists conversations (
   vendor_id       uuid references vendors(id) on delete cascade, -- null si support
   is_support      boolean not null default false,
   needs_human     boolean not null default false,
+  client_hidden_at timestamptz, -- "supprimee" cote client
+  vendor_hidden_at timestamptz, -- "supprimee" cote vendeur
   last_message_at timestamptz not null default now(),
   created_at      timestamptz not null default now(),
   unique (client_id, vendor_id)

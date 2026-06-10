@@ -10,6 +10,7 @@ import {
 import { sql } from "@/lib/db";
 import { initials } from "@/lib/utils";
 import { ChatThread } from "@/components/chat/chat-thread";
+import { DeleteConversationButton } from "@/components/chat/delete-conversation-button";
 import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 export const dynamic = "force-dynamic";
@@ -63,6 +64,9 @@ export default async function ConversationPage({
           <p className="truncate text-xs text-muted-foreground">
             {header?.is_support ? "Service client - reponse rapide" : header?.shop_name}
           </p>
+        </div>
+        <div className="ml-auto">
+          <DeleteConversationButton conversationId={id} />
         </div>
       </header>
 
