@@ -102,6 +102,7 @@ export interface Product {
   name: string;
   description: string | null;
   price: number;
+  compare_at_price: number | null;
   stock: number;
   is_bulky: boolean;
   is_active: boolean;

@@ -148,6 +148,7 @@ create table if not exists products (
   name         text not null,
   description  text,
   price        numeric(12,2) not null check (price >= 0),
+  compare_at_price integer,
   stock        integer not null default 0 check (stock >= 0),
   is_bulky     boolean not null default false,
   is_active    boolean not null default true,

@@ -46,10 +46,20 @@ export default async function ProductDetailPage({
 
         <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-3xl font-extrabold text-transparent">
             {formatFcfa(product.price)}
           </span>
+          {product.compare_at_price != null && product.compare_at_price > product.price && (
+            <>
+              <span className="text-lg text-muted-foreground line-through">
+                {formatFcfa(product.compare_at_price)}
+              </span>
+              <span className="rounded-full bg-brand-orange px-2.5 py-1 text-sm font-bold text-white">
+                -{Math.round((1 - product.price / product.compare_at_price) * 100)}%
+              </span>
+            </>
+          )}
           {product.rating_count > 0 && (
             <span className="flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-sm font-medium text-amber-700">
               <Star className="size-4 fill-amber-400 text-amber-400" />

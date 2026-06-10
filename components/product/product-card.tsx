@@ -8,6 +8,10 @@ import { Badge } from "@/components/ui/badge";
 export function ProductCard({ product }: { product: ProductWithImages }) {
   const img = product.product_images?.sort((a, b) => a.position - b.position)[0];
   const outOfStock = product.stock <= 0;
+  const onSale = product.compare_at_price != null && product.compare_at_price > product.price;
+  const discount = onSale
+    ? Math.round((1 - product.price / product.compare_at_price!) * 100)
+    : 0;
 
   return (
     <Link
@@ -32,6 +36,11 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/15 to-transparent" />
 
         <div className="absolute left-2 top-2 flex flex-col gap-1">
+          {onSale && (
+            <span className="rounded-full bg-brand-orange px-2 py-0.5 text-xs font-bold text-white shadow-soft">
+              -{discount}%
+            </span>
+          )}
           {outOfStock && <Badge variant="destructive">Rupture</Badge>}
           {product.is_bulky && <Badge variant="secondary">Volumineux</Badge>}
         </div>
@@ -48,10 +57,15 @@ export function ProductCard({ product }: { product: ProductWithImages }) {
         {product.vendors && (
           <p className="truncate text-xs text-muted-foreground">{product.vendors.shop_name}</p>
         )}
-        <div className="mt-auto pt-1.5">
+        <div className="mt-auto flex items-baseline gap-1.5 pt-1.5">
           <span className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-base font-extrabold text-transparent">
             {formatFcfa(product.price)}
           </span>
+          {onSale && (
+            <span className="text-xs text-muted-foreground line-through">
+              {formatFcfa(product.compare_at_price!)}
+            </span>
+          )}
         </div>
       </div>
     </Link>

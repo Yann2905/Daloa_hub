@@ -27,6 +27,9 @@ export function ProductForm({
   const [name, setName] = useState(product?.name ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
   const [price, setPrice] = useState(product?.price?.toString() ?? "");
+  const [compareAt, setCompareAt] = useState(
+    product?.compare_at_price != null ? String(product.compare_at_price) : "",
+  );
   const [stock, setStock] = useState(product?.stock?.toString() ?? "");
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
   const [isBulky, setIsBulky] = useState(product?.is_bulky ?? false);
@@ -43,6 +46,7 @@ export function ProductForm({
       name,
       description,
       price,
+      compare_at_price: compareAt ? Number(compareAt) : undefined,
       stock,
       category_id: categoryId,
       is_bulky: isBulky,
@@ -87,13 +91,28 @@ export function ProductForm({
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="price">Prix (FCFA)</Label>
+          <Label htmlFor="price">Prix de vente (FCFA)</Label>
           <Input id="price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} required />
         </div>
         <div className="space-y-2">
           <Label htmlFor="stock">Stock</Label>
           <Input id="stock" type="number" min={0} value={stock} onChange={(e) => setStock(e.target.value)} required />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="compare">Prix avant promo (FCFA, optionnel)</Label>
+        <Input
+          id="compare"
+          type="number"
+          min={0}
+          placeholder="Ex : 10000"
+          value={compareAt}
+          onChange={(e) => setCompareAt(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          S&apos;il est superieur au prix de vente, un badge promo et le prix barre s&apos;affichent.
+        </p>
       </div>
 
       <div className="space-y-2">
