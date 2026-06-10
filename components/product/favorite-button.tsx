@@ -31,11 +31,11 @@ export function FavoriteButton({
       onClick={onClick}
       aria-label={fav ? "Retirer des favoris" : "Ajouter aux favoris"}
       className={cn(
-        "flex items-center justify-center rounded-full bg-white/90 text-foreground shadow-soft backdrop-blur transition active:scale-90",
+        "flex items-center justify-center rounded-full bg-black/40 text-white shadow-soft backdrop-blur transition active:scale-90",
         className,
       )}
     >
-      <Heart className={cn(iconClassName, fav ? "fill-red-500 text-red-500" : "text-foreground")} />
+      <Heart className={cn(iconClassName, fav ? "fill-red-500 text-red-500" : "")} />
     </button>
   );
 }

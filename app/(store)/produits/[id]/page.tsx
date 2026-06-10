@@ -120,7 +120,7 @@ export default async function ProductDetailPage({
           <h1 className="text-3xl font-bold tracking-tight">{product.name}</h1>
           <div className="flex shrink-0 items-center gap-2">
             <ShareButton text={`${product.name} - ${formatFcfa(product.price)} sur DALOA HUB`} label="" className="size-11 px-0" />
-            <FavoriteButton productId={product.id} className="size-11 border bg-card" iconClassName="size-5" />
+            <FavoriteButton productId={product.id} className="size-11 border bg-card text-foreground" iconClassName="size-5" />
           </div>
         </div>
 

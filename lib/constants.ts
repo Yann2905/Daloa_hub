@@ -5,6 +5,11 @@
 
 export const APP_NAME = "DALOA HUB";
 
+// --- Contact du service client ---
+export const SUPPORT_WHATSAPP = "2250575343846"; // format wa.me (sans +)
+export const SUPPORT_PHONE = "+2250575343846"; // format tel:
+export const SUPPORT_PHONE_DISPLAY = "05 75 34 38 46";
+
 // --- Roles utilisateurs (RBAC) ---
 export const USER_ROLES = ["client", "vendor", "driver", "admin"] as const;
 export type UserRole = (typeof USER_ROLES)[number];

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Store, Truck, ShieldCheck, ClipboardList } from "lucide-react";
+import { Store, Truck, ShieldCheck, ClipboardList, HelpCircle } from "lucide-react";
 import { getProfile } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { LogoutButton } from "@/components/auth/logout-button";
@@ -51,6 +51,10 @@ export default async function AccountPage() {
             <span className="font-medium">{roleLink.label}</span>
           </Link>
         )}
+        <Link href="/aide" className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:border-brand-green">
+          <HelpCircle className="size-5 text-brand-green" />
+          <span className="font-medium">Aide & Assistance</span>
+        </Link>
       </div>
 
       <LogoutButton className="w-full" />
