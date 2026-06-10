@@ -256,6 +256,36 @@ export async function setVendorProductLimit(
   return {};
 }
 
+// ---------------- Certification livreur ----------------
+export async function setDriverVerified(
+  driverId: string,
+  verified: boolean,
+): Promise<Result> {
+  await ensureAdmin();
+  const [d] = await sql<{ user_id: string }[]>`
+    update drivers set verified = ${verified} where id = ${driverId} returning user_id
+  `;
+  if (d) {
+    if (verified) {
+      await sql`insert into notifications (user_id, type, title, body)
+        values (${d.user_id}, 'driver_approved', ${"Livreur certifie"},
+        ${"Felicitations ! Vous etes desormais un livreur certifie DALOA HUB (badge bleu)."})`;
+      await pushUser(d.user_id, {
+        title: "Livreur certifie",
+        body: "Vous avez recu le badge livreur certifie.",
+        url: "/livreur",
+      });
+    } else {
+      await sql`insert into notifications (user_id, type, title, body)
+        values (${d.user_id}, 'report_received', ${"Certification retiree"},
+        ${"Votre badge de livreur certifie a ete retire."})`;
+      await pushUser(d.user_id, { title: "Certification retiree", body: "Votre badge a ete retire.", url: "/livreur" });
+    }
+  }
+  revalidatePath("/admin/livreurs");
+  return {};
+}
+
 // ---------------- Moderation produit ----------------
 export async function setProductActiveAdmin(
   productId: string,

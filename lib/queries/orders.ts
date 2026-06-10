@@ -46,6 +46,7 @@ export interface OrderDetail extends Order {
     full_name: string | null;
     phone: string | null;
     avatar_url: string | null;
+    verified: boolean;
   } | null;
   order_items: OrderItem[];
   order_status_history: OrderStatusHistory[];
@@ -60,7 +61,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
         case when d.id is not null
           then json_build_object('id', d.id, 'user_id', d.user_id,
             'full_name', du.full_name, 'phone', du.phone,
-            'avatar_url', du.avatar_url) end as drivers,
+            'avatar_url', du.avatar_url, 'verified', d.verified) end as drivers,
         coalesce((
           select json_agg(json_build_object('id', oi.id, 'order_id', oi.order_id,
             'product_id', oi.product_id, 'name', oi.name, 'variant', oi.variant,

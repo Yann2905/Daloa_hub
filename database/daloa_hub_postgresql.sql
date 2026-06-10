@@ -116,6 +116,7 @@ create table if not exists drivers (
   vehicle_doc_url text,
   vehicle_type    text,
   is_available    boolean not null default false,
+  verified        boolean not null default false,
   lat             double precision,
   lng             double precision,
   last_seen_at    timestamptz,

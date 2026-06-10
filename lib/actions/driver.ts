@@ -102,6 +102,25 @@ export async function completeDelivery(orderId: string): Promise<{ error?: strin
     body: "Votre commande a ete livree. Pensez a evaluer.",
     url: `/commandes/${orderId}`,
   });
+
+  // Certification automatique du livreur apres 20 courses livrees
+  const [d] = await sql<{ verified: boolean; delivered: number; user_id: string }[]>`
+    select d.verified, d.user_id,
+      (select count(*)::int from orders o where o.driver_id = d.id and o.status = 'delivered') as delivered
+    from drivers d where d.id = ${driver.id}
+  `;
+  if (d && !d.verified && d.delivered >= 20) {
+    await sql`update drivers set verified = true where id = ${driver.id}`;
+    await sql`insert into notifications (user_id, type, title, body)
+      values (${d.user_id}, 'driver_approved', ${"Livreur certifie !"},
+      ${"Felicitations ! Apres 20 courses livrees, vous etes desormais un livreur certifie DALOA HUB."})`;
+    await pushUser(d.user_id, {
+      title: "Livreur certifie !",
+      body: "20 courses livrees : vous etes certifie DALOA HUB.",
+      url: "/livreur",
+    });
+  }
+
   revalidatePath("/livreur");
   return {};
 }

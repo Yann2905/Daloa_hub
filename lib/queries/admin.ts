@@ -81,7 +81,7 @@ export interface DriverAdminRow extends Driver {
 export async function listDriversForAdmin(): Promise<DriverAdminRow[]> {
   return await sql<DriverAdminRow[]>`
     select d.id, d.user_id, d.status, d.cni_url, d.vehicle_doc_url,
-           d.vehicle_type, d.is_available, d.lat, d.lng, d.last_seen_at,
+           d.vehicle_type, d.is_available, d.verified, d.lat, d.lng, d.last_seen_at,
            d.rating_avg::float8 as rating_avg, d.rating_count,
            d.created_at, d.updated_at,
            json_build_object('full_name', u.full_name, 'phone', u.phone,

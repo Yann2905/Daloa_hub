@@ -80,6 +80,7 @@ export interface Driver {
   vehicle_doc_url: string | null;
   vehicle_type: string | null;
   is_available: boolean;
+  verified: boolean;
   lat: number | null;
   lng: number | null;
   last_seen_at: string | null;

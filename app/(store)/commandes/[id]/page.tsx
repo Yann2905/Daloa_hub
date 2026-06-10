@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Package, Store, Phone, Truck } from "lucide-react";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import { TrackMapLoader } from "@/components/order/track-map-loader";
 import { requireUser } from "@/lib/auth";
 import { getOrder } from "@/lib/queries/orders";
@@ -169,8 +170,13 @@ export default async function OrderDetailPage({
               </span>
             )}
             <div className="flex-1">
-              <p className="font-medium">{order.drivers.full_name}</p>
-              <p className="text-xs text-muted-foreground">Livreur DALOA HUB</p>
+              <p className="flex items-center gap-1 font-medium">
+                {order.drivers.full_name}
+                {order.drivers.verified && <VerifiedBadge />}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {order.drivers.verified ? "Livreur certifie DALOA HUB" : "Livreur DALOA HUB"}
+              </p>
             </div>
             {order.drivers.phone && (
               <a

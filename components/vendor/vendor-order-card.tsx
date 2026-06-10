@@ -11,6 +11,7 @@ import { formatFcfa, formatDateTime, initials } from "@/lib/utils";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 import type { VendorOrderRow } from "@/lib/queries/vendor";
 
 export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
@@ -107,7 +108,10 @@ export function VendorOrderCard({ order }: { order: VendorOrderRow }) {
               </span>
             )}
             <div className="min-w-0 flex-1">
-              <p className="font-medium">{order.driver.full_name}</p>
+              <p className="flex items-center gap-1 font-medium">
+                {order.driver.full_name}
+                {order.driver.verified && <VerifiedBadge />}
+              </p>
               <p className="flex items-center gap-2 text-xs text-muted-foreground">
                 {order.driver.vehicle_type && (
                   <span className="flex items-center gap-1"><Bike className="size-3" />{order.driver.vehicle_type}</span>

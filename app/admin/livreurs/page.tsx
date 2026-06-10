@@ -3,6 +3,8 @@ import { DRIVER_STATUS_LABELS } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { DriverValidation, ViewDocument } from "@/components/admin/admin-actions";
+import { DriverCertifyToggle } from "@/components/admin/driver-certify-toggle";
+import { VerifiedBadge } from "@/components/ui/verified-badge";
 
 export const metadata = { title: "Validation livreurs" };
 
@@ -27,7 +29,10 @@ export default async function AdminDriversPage() {
           <div key={d.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-medium">{d.profiles?.full_name ?? "Livreur"}</p>
+                <p className="flex items-center gap-1.5 font-medium">
+                  {d.profiles?.full_name ?? "Livreur"}
+                  {d.verified && <VerifiedBadge />}
+                </p>
                 <p className="text-sm text-muted-foreground">
                   {d.profiles?.phone} - {d.vehicle_type ?? "Vehicule non renseigne"}
                 </p>
@@ -38,7 +43,8 @@ export default async function AdminDriversPage() {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <ViewDocument path={d.cni_url} label="CNI" />
               <ViewDocument path={d.vehicle_doc_url} label="Vehicule" />
-              <div className="ml-auto">
+              <div className="ml-auto flex gap-2">
+                {d.status === "approved" && <DriverCertifyToggle driverId={d.id} verified={d.verified} />}
                 <DriverValidation driverId={d.id} status={d.status} />
               </div>
             </div>

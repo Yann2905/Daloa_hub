@@ -129,6 +129,7 @@ export interface VendorOrderRow extends Order {
     avatar_url: string | null;
     vehicle_type: string | null;
     has_cni: boolean;
+    verified: boolean;
   } | null;
 }
 
@@ -148,7 +149,7 @@ export async function listVendorOrders(
            case when d.id is not null then json_build_object(
              'id', d.id, 'full_name', du.full_name, 'phone', du.phone,
              'avatar_url', du.avatar_url, 'vehicle_type', d.vehicle_type,
-             'has_cni', (d.cni_url is not null)
+             'has_cni', (d.cni_url is not null), 'verified', d.verified
            ) end as driver,
            coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
              'quantity', oi.quantity, 'unit_price', oi.unit_price::float8, 'variant', oi.variant,
