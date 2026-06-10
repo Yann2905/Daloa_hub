@@ -82,6 +82,7 @@ export default function CheckoutPage() {
         unitPrice: l.unitPrice,
         categorySlug: l.categorySlug,
         isBulky: l.isBulky,
+        variant: l.variant ?? undefined,
       })),
     });
     setSubmitting(false);

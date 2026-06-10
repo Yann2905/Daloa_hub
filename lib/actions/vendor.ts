@@ -32,13 +32,16 @@ const productSchema = z.object({
   is_bulky: z.boolean().optional(),
   is_active: z.boolean().optional(),
   images: z.array(z.string().url()).optional(),
+  options: z
+    .array(z.object({ name: z.string().min(1), values: z.array(z.string().min(1)).min(1) }))
+    .optional(),
 });
 
 export async function createProduct(input: unknown): Promise<VResult> {
   const { vendorId } = await requireVendor();
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0].message };
-  const { images, category_id, name, description, price, compare_at_price, stock, is_bulky, is_active } =
+  const { images, category_id, name, description, price, compare_at_price, options, stock, is_bulky, is_active } =
     parsed.data;
   // Le prix barre n'a de sens que s'il est superieur au prix de vente.
   const compareAt = compare_at_price && compare_at_price > price ? compare_at_price : null;
@@ -47,9 +50,9 @@ export async function createProduct(input: unknown): Promise<VResult> {
     const productId = await sql.begin(async (tx) => {
       const [p] = await tx<{ id: string }[]>`
         insert into products (vendor_id, category_id, name, description, price,
-          compare_at_price, stock, is_bulky, is_active)
+          compare_at_price, options, stock, is_bulky, is_active)
         values (${vendorId}, ${category_id || null}, ${name}, ${description ?? null},
-          ${price}, ${compareAt}, ${stock}, ${is_bulky ?? false}, ${is_active ?? true})
+          ${price}, ${compareAt}, ${sql.json(options ?? [])}, ${stock}, ${is_bulky ?? false}, ${is_active ?? true})
         returning id
       `;
       if (images?.length) {
@@ -71,7 +74,7 @@ export async function updateProduct(productId: string, input: unknown): Promise<
   const { vendorId } = await requireVendor();
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) return { error: parsed.error.errors[0].message };
-  const { images, category_id, name, description, price, compare_at_price, stock, is_bulky, is_active } =
+  const { images, category_id, name, description, price, compare_at_price, options, stock, is_bulky, is_active } =
     parsed.data;
   const compareAt = compare_at_price && compare_at_price > price ? compare_at_price : null;
 
@@ -79,8 +82,8 @@ export async function updateProduct(productId: string, input: unknown): Promise<
     await sql.begin(async (tx) => {
       const updated = await tx`
         update products set name = ${name}, description = ${description ?? null},
-          price = ${price}, compare_at_price = ${compareAt}, stock = ${stock},
-          category_id = ${category_id || null},
+          price = ${price}, compare_at_price = ${compareAt}, options = ${sql.json(options ?? [])},
+          stock = ${stock}, category_id = ${category_id || null},
           is_bulky = ${is_bulky ?? false}, is_active = ${is_active ?? true}
         where id = ${productId} and vendor_id = ${vendorId}
         returning id

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, Plus, X } from "lucide-react";
 import { createProduct, updateProduct } from "@/lib/actions/vendor";
 import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
@@ -34,6 +34,9 @@ export function ProductForm({
   const [categoryId, setCategoryId] = useState(product?.category_id ?? "");
   const [isBulky, setIsBulky] = useState(product?.is_bulky ?? false);
   const [isActive, setIsActive] = useState(product?.is_active ?? true);
+  const [options, setOptions] = useState<{ name: string; valuesText: string }[]>(
+    product?.options?.map((o) => ({ name: o.name, valuesText: o.values.join(", ") })) ?? [],
+  );
   const [images, setImages] = useState<string[]>(
     product?.product_images?.map((i) => i.url) ?? [],
   );
@@ -52,6 +55,12 @@ export function ProductForm({
       is_bulky: isBulky,
       is_active: isActive,
       images,
+      options: options
+        .map((o) => ({
+          name: o.name.trim(),
+          values: o.valuesText.split(",").map((v) => v.trim()).filter(Boolean),
+        }))
+        .filter((o) => o.name && o.values.length > 0),
     };
     const res = isEdit
       ? await updateProduct(product!.id, payload)
@@ -123,6 +132,51 @@ export function ProductForm({
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
         </Select>
+      </div>
+
+      {/* Variantes (taille, couleur...) */}
+      <div className="space-y-2 rounded-xl border bg-secondary/40 p-3">
+        <div className="flex items-center justify-between">
+          <Label>Variantes (optionnel)</Label>
+          <button
+            type="button"
+            onClick={() => setOptions((o) => [...o, { name: "", valuesText: "" }])}
+            className="flex items-center gap-1 text-sm font-medium text-primary"
+          >
+            <Plus className="size-4" /> Ajouter
+          </button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Ex : « Taille » avec « 38, 39, 40 » ou « Couleur » avec « Rouge, Noir ». Le client choisira avant d&apos;acheter.
+        </p>
+        {options.map((o, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <Input
+              placeholder="Nom (ex: Taille)"
+              value={o.name}
+              onChange={(e) =>
+                setOptions((prev) => prev.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))
+              }
+              className="w-1/3"
+            />
+            <Input
+              placeholder="Valeurs separees par des virgules"
+              value={o.valuesText}
+              onChange={(e) =>
+                setOptions((prev) => prev.map((x, j) => (j === i ? { ...x, valuesText: e.target.value } : x)))
+              }
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => setOptions((prev) => prev.filter((_, j) => j !== i))}
+              className="rounded-md p-2 text-destructive hover:bg-destructive/10"
+              aria-label="Supprimer"
+            >
+              <X className="size-4" />
+            </button>
+          </div>
+        ))}
       </div>
 
       <label className="flex items-center gap-2 text-sm">

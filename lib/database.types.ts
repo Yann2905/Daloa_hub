@@ -103,6 +103,7 @@ export interface Product {
   description: string | null;
   price: number;
   compare_at_price: number | null;
+  options: ProductOption[];
   stock: number;
   is_bulky: boolean;
   is_active: boolean;
@@ -118,6 +119,11 @@ export interface ProductImage {
   url: string;
   position: number;
   created_at: string;
+}
+
+export interface ProductOption {
+  name: string; // ex: "Taille", "Couleur"
+  values: string[]; // ex: ["38","39","40"]
 }
 
 export interface Order {
@@ -155,6 +161,7 @@ export interface OrderItem {
   unit_price: number;
   quantity: number;
   line_total: number;
+  variant: string | null;
   created_at: string;
 }
 

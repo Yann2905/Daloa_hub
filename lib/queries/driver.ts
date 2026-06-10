@@ -22,6 +22,7 @@ export interface DeliveryRow extends Order {
     quantity: number;
     unit_price: number;
     image_url: string | null;
+    variant: string | null;
   }[];
   client: { full_name: string; phone: string | null } | null;
   shop: {
@@ -54,7 +55,7 @@ export async function listDriverDeliveries(
         json_build_object('name', v.shop_name, 'phone', vu.phone, 'address', v.address,
           'lat', v.lat, 'lng', v.lng) as shop,
         coalesce(json_agg(json_build_object('id', oi.id, 'name', oi.name,
-          'quantity', oi.quantity, 'unit_price', oi.unit_price::float8,
+          'quantity', oi.quantity, 'unit_price', oi.unit_price::float8, 'variant', oi.variant,
           'image_url', (select pi.url from product_images pi
             where pi.product_id = oi.product_id order by pi.position limit 1))
           order by oi.created_at) filter (where oi.id is not null), '[]') as order_items

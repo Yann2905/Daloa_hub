@@ -63,7 +63,7 @@ export async function getOrder(id: string): Promise<OrderDetail | null> {
             'avatar_url', du.avatar_url) end as drivers,
         coalesce((
           select json_agg(json_build_object('id', oi.id, 'order_id', oi.order_id,
-            'product_id', oi.product_id, 'name', oi.name,
+            'product_id', oi.product_id, 'name', oi.name, 'variant', oi.variant,
             'unit_price', oi.unit_price::float8, 'quantity', oi.quantity,
             'line_total', oi.line_total::float8, 'created_at', oi.created_at))
           from order_items oi where oi.order_id = o.id), '[]') as order_items,

@@ -13,6 +13,12 @@ export interface CartLine {
   categorySlug: CategorySlug;
   isBulky: boolean;
   stock: number;
+  variant?: string | null;
+}
+
+/** Identifiant d'une ligne (un meme produit avec 2 variantes = 2 lignes). */
+export function lineKey(l: { productId: string; variant?: string | null }): string {
+  return `${l.productId}::${l.variant ?? ""}`;
 }
 
 interface CartState {
@@ -21,8 +27,8 @@ interface CartState {
 
 type Action =
   | { type: "add"; line: Omit<CartLine, "quantity">; quantity?: number }
-  | { type: "remove"; productId: string }
-  | { type: "setQty"; productId: string; quantity: number }
+  | { type: "remove"; key: string }
+  | { type: "setQty"; key: string; quantity: number }
   | { type: "clear" }
   | { type: "hydrate"; state: CartState };
 
@@ -31,26 +37,25 @@ const STORAGE_KEY = "daloa-hub-cart-v1";
 function reducer(state: CartState, action: Action): CartState {
   switch (action.type) {
     case "add": {
-      const existing = state.lines.find((l) => l.productId === action.line.productId);
+      const k = lineKey(action.line);
+      const existing = state.lines.find((l) => lineKey(l) === k);
       const qty = action.quantity ?? 1;
       if (existing) {
         return {
           lines: state.lines.map((l) =>
-            l.productId === action.line.productId
-              ? { ...l, quantity: Math.min(l.quantity + qty, l.stock) }
-              : l,
+            lineKey(l) === k ? { ...l, quantity: Math.min(l.quantity + qty, l.stock) } : l,
           ),
         };
       }
       return { lines: [...state.lines, { ...action.line, quantity: Math.min(qty, action.line.stock) }] };
     }
     case "remove":
-      return { lines: state.lines.filter((l) => l.productId !== action.productId) };
+      return { lines: state.lines.filter((l) => lineKey(l) !== action.key) };
     case "setQty":
       return {
         lines: state.lines
           .map((l) =>
-            l.productId === action.productId
+            lineKey(l) === action.key
               ? { ...l, quantity: Math.max(0, Math.min(action.quantity, l.stock)) }
               : l,
           )
@@ -67,8 +72,8 @@ function reducer(state: CartState, action: Action): CartState {
 
 interface CartContextValue extends CartState {
   add: (line: Omit<CartLine, "quantity">, quantity?: number) => void;
-  remove: (productId: string) => void;
-  setQty: (productId: string, quantity: number) => void;
+  remove: (key: string) => void;
+  setQty: (key: string, quantity: number) => void;
   clear: () => void;
   count: number;
   subtotal: number;
@@ -102,8 +107,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const value: CartContextValue = {
     ...state,
     add: (line, quantity) => dispatch({ type: "add", line, quantity }),
-    remove: (productId) => dispatch({ type: "remove", productId }),
-    setQty: (productId, quantity) => dispatch({ type: "setQty", productId, quantity }),
+    remove: (key) => dispatch({ type: "remove", key }),
+    setQty: (key, quantity) => dispatch({ type: "setQty", key, quantity }),
     clear: () => dispatch({ type: "clear" }),
     count: state.lines.reduce((n, l) => n + l.quantity, 0),
     subtotal: state.lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0),

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Minus, Plus, Trash2, ShoppingCart, ImageOff } from "lucide-react";
-import { useCart } from "@/lib/cart/cart-context";
+import { useCart, lineKey } from "@/lib/cart/cart-context";
 import { formatFcfa } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
@@ -31,7 +31,7 @@ export default function CartPage() {
       <div className="space-y-3 lg:col-span-2">
         <h1 className="text-2xl font-bold">Mon panier</h1>
         {lines.map((l) => (
-          <div key={l.productId} className="flex gap-3 rounded-2xl border bg-card p-3 shadow-soft">
+          <div key={lineKey(l)} className="flex gap-3 rounded-2xl border bg-card p-3 shadow-soft">
             <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-secondary">
               {l.imageUrl ? (
                 <Image src={l.imageUrl} alt={l.name} fill sizes="80px" className="object-cover" />
@@ -43,19 +43,20 @@ export default function CartPage() {
             </div>
             <div className="flex flex-1 flex-col">
               <p className="line-clamp-2 text-sm font-medium">{l.name}</p>
+              {l.variant && <p className="text-xs text-muted-foreground">{l.variant}</p>}
               <p className="bg-gradient-to-r from-brand-dark to-brand-green bg-clip-text text-sm font-bold text-transparent">{formatFcfa(l.unitPrice)}</p>
               <div className="mt-auto flex items-center justify-between">
                 <div className="flex items-center rounded-full border">
-                  <button onClick={() => setQty(l.productId, l.quantity - 1)} className="p-2" aria-label="Diminuer">
+                  <button onClick={() => setQty(lineKey(l), l.quantity - 1)} className="p-2" aria-label="Diminuer">
                     <Minus className="size-3.5" />
                   </button>
                   <span className="w-8 text-center text-sm">{l.quantity}</span>
-                  <button onClick={() => setQty(l.productId, l.quantity + 1)} className="p-2" aria-label="Augmenter">
+                  <button onClick={() => setQty(lineKey(l), l.quantity + 1)} className="p-2" aria-label="Augmenter">
                     <Plus className="size-3.5" />
                   </button>
                 </div>
                 <button
-                  onClick={() => remove(l.productId)}
+                  onClick={() => remove(lineKey(l))}
                   className="p-2 text-destructive"
                   aria-label="Supprimer"
                 >

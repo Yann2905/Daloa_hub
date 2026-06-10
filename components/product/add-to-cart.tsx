@@ -6,7 +6,13 @@ import { useCart, type CartLine } from "@/lib/cart/cart-context";
 import { useToast } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
 
-export function AddToCart({ line }: { line: Omit<CartLine, "quantity"> }) {
+export function AddToCart({
+  line,
+  disabled = false,
+}: {
+  line: Omit<CartLine, "quantity">;
+  disabled?: boolean;
+}) {
   const { add, vendorId, lines } = useCart();
   const { toast } = useToast();
   const [qty, setQty] = useState(1);
@@ -62,7 +68,7 @@ export function AddToCart({ line }: { line: Omit<CartLine, "quantity"> }) {
           <Plus className="size-4" />
         </button>
       </div>
-      <Button onClick={handleAdd} className="flex-1" size="lg" variant={added ? "accent" : "default"}>
+      <Button onClick={handleAdd} disabled={disabled} className="flex-1" size="lg" variant={added ? "accent" : "default"}>
         {added ? (
           <>
             <Check className="size-4" /> Ajoute au panier

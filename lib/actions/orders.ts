@@ -31,6 +31,7 @@ const checkoutSchema = z.object({
         unitPrice: z.number().nonnegative(),
         categorySlug: z.string(),
         isBulky: z.boolean(),
+        variant: z.string().optional(),
       }),
     )
     .min(1, "Panier vide"),
@@ -106,6 +107,7 @@ export async function checkout(payload: unknown): Promise<ActionState> {
   const itemsArr = items.map((i) => ({
     product_id: i.productId,
     quantity: i.quantity,
+    variant: i.variant ?? null,
   }));
 
   try {

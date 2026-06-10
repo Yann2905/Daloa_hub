@@ -5,7 +5,7 @@ import { getProduct } from "@/lib/queries/products";
 import { listProductReviews, getReviewEligibility } from "@/lib/queries/reviews";
 import { getUser } from "@/lib/auth";
 import { formatFcfa, formatDate, initials } from "@/lib/utils";
-import { AddToCart } from "@/components/product/add-to-cart";
+import { BuyBox } from "@/components/product/buy-box";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { FavoriteButton } from "@/components/product/favorite-button";
 import { ReviewForm } from "@/components/product/review-form";
@@ -133,7 +133,8 @@ export default async function ProductDetailPage({
         )}
 
         <div className="space-y-2 pt-2">
-          <AddToCart
+          <BuyBox
+            options={product.options ?? []}
             line={{
               productId: product.id,
               vendorId: product.vendor_id,

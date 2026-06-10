@@ -18,7 +18,7 @@ export interface ProductFilters {
 // Selection commune : produit + images (json) + categorie + boutique
 const PRODUCT_SELECT = sql`
   p.id, p.vendor_id, p.category_id, p.name, p.description,
-  p.price::float8 as price, p.compare_at_price, p.stock, p.is_bulky, p.is_active,
+  p.price::float8 as price, p.compare_at_price, p.options, p.stock, p.is_bulky, p.is_active,
   p.rating_avg::float8 as rating_avg, p.rating_count,
   p.created_at, p.updated_at,
   coalesce(
@@ -112,7 +112,7 @@ export async function getProduct(id: string): Promise<ProductWithImages | null> 
     const rows = await sql<ProductWithImages[]>`
       select
         p.id, p.vendor_id, p.category_id, p.name, p.description,
-        p.price::float8 as price, p.compare_at_price, p.stock, p.is_bulky, p.is_active,
+        p.price::float8 as price, p.compare_at_price, p.options, p.stock, p.is_bulky, p.is_active,
         p.rating_avg::float8 as rating_avg, p.rating_count,
         p.created_at, p.updated_at,
         coalesce(

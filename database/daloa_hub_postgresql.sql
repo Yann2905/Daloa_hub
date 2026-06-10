@@ -149,6 +149,7 @@ create table if not exists products (
   description  text,
   price        numeric(12,2) not null check (price >= 0),
   compare_at_price integer,
+  options      jsonb not null default '[]'::jsonb,
   stock        integer not null default 0 check (stock >= 0),
   is_bulky     boolean not null default false,
   is_active    boolean not null default true,
@@ -219,6 +220,7 @@ create table if not exists order_items (
   unit_price  numeric(12,2) not null,
   quantity    integer not null check (quantity > 0),
   line_total  numeric(12,2) not null,
+  variant     text,
   created_at  timestamptz not null default now()
 );
 create index if not exists idx_order_items_order on order_items(order_id);
@@ -499,8 +501,9 @@ begin
       where id=(v_item->>'product_id')::uuid and vendor_id=p_vendor_id and is_active=true for update;
     if v_product.id is null then raise exception 'Produit indisponible'; end if;
     if v_product.stock < v_qty then raise exception 'Stock insuffisant pour %', v_product.name; end if;
-    insert into order_items(order_id,product_id,name,unit_price,quantity,line_total)
-    values (v_order_id,v_product.id,v_product.name,v_product.price,v_qty,v_product.price*v_qty);
+    insert into order_items(order_id,product_id,name,unit_price,quantity,line_total,variant)
+    values (v_order_id,v_product.id,v_product.name,v_product.price,v_qty,v_product.price*v_qty,
+            nullif(v_item->>'variant',''));
     v_subtotal := v_subtotal + v_product.price*v_qty;
   end loop;
 

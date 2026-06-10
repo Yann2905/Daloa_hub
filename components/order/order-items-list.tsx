@@ -8,6 +8,7 @@ export interface OrderItemView {
   quantity: number;
   unit_price?: number;
   image_url?: string | null;
+  variant?: string | null;
 }
 
 export function OrderItemsList({ items }: { items: OrderItemView[] }) {
@@ -26,6 +27,7 @@ export function OrderItemsList({ items }: { items: OrderItemView[] }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{it.name}</p>
+            {it.variant && <p className="truncate text-xs font-medium text-primary">{it.variant}</p>}
             <p className="text-xs text-muted-foreground">
               Quantite : {it.quantity}
               {it.unit_price != null && ` - ${formatFcfa(it.unit_price)} / unite`}
