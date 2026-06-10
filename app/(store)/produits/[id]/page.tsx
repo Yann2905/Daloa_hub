@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Star, Store } from "lucide-react";
+import { Star, Store, BadgeCheck } from "lucide-react";
 import { getProduct } from "@/lib/queries/products";
-import { formatFcfa } from "@/lib/utils";
+import { listProductReviews, getReviewEligibility } from "@/lib/queries/reviews";
+import { getUser } from "@/lib/auth";
+import { formatFcfa, formatDate, initials } from "@/lib/utils";
 import { AddToCart } from "@/components/product/add-to-cart";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { FavoriteButton } from "@/components/product/favorite-button";
+import { ReviewForm } from "@/components/product/review-form";
 import { NegotiateButton } from "@/components/chat/negotiate-button";
 import { Badge } from "@/components/ui/badge";
 import type { CategorySlug } from "@/lib/constants";
@@ -26,10 +29,17 @@ export default async function ProductDetailPage({
   );
   const cover = images[0];
 
+  const user = await getUser();
+  const reviews = await listProductReviews(id);
+  const eligibility = user
+    ? await getReviewEligibility(id, user.id)
+    : { canReview: false, orderId: null };
+
   return (
-    <div className="container grid gap-8 py-6 md:grid-cols-2">
-      {/* Galerie defilante */}
-      <ProductGallery images={images} alt={product.name} />
+    <div className="container space-y-10 py-6">
+      <div className="grid gap-8 md:grid-cols-2">
+        {/* Galerie defilante */}
+        <ProductGallery images={images} alt={product.name} />
 
       {/* Infos */}
       <div className="space-y-4">
@@ -113,6 +123,58 @@ export default async function ProductDetailPage({
           />
         </div>
       </div>
+      </div>
+
+      {/* Avis clients */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-bold tracking-tight">
+          Avis clients{reviews.length > 0 ? ` (${reviews.length})` : ""}
+        </h2>
+
+        {eligibility.canReview && <ReviewForm productId={product.id} />}
+
+        {reviews.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucun avis pour l&apos;instant. Soyez le premier a noter ce produit apres l&apos;avoir recu.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {reviews.map((r) => (
+              <li key={r.id} className="rounded-xl border bg-card p-4 shadow-soft">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex size-9 items-center justify-center rounded-full bg-brand-gradient text-xs font-bold text-white">
+                      {initials(r.author)}
+                    </span>
+                    <div>
+                      <p className="flex items-center gap-1 text-sm font-medium">
+                        {r.author}
+                        {r.verified && (
+                          <span className="flex items-center gap-0.5 text-xs font-normal text-primary">
+                            <BadgeCheck className="size-3.5" /> Achat verifie
+                          </span>
+                        )}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDate(r.created_at)}</p>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-0.5">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star
+                        key={i}
+                        className={
+                          i < r.stars ? "size-4 fill-amber-400 text-amber-400" : "size-4 text-muted-foreground/40"
+                        }
+                      />
+                    ))}
+                  </span>
+                </div>
+                {r.comment && <p className="mt-2 text-sm text-muted-foreground">{r.comment}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }
