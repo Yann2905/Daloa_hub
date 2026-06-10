@@ -14,14 +14,20 @@ const config: Config = {
       screens: { "2xl": "1280px" },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
+      },
       colors: {
         // DALOA HUB brand palette
         brand: {
           white: "#FFFFFF",
-          light: "#F8FAFC",
+          light: "#F8F6F1",
           green: "#00A651", // Vert principal
           dark: "#0B3C26", // Vert fonce
           emerald: "#10B981", // Vert emeraude
+          orange: "#F97316", // Orange ivoirien (energie / promos)
+          amber: "#FB923C", // Orange clair
           royal: "#1D4ED8", // Bleu royal
           navy: "#1E3A8A", // Bleu nuit
         },
@@ -69,6 +75,7 @@ const config: Config = {
         card: "0 4px 24px -6px rgba(11, 60, 38, 0.12)",
         glow: "0 8px 30px -6px rgba(0, 166, 81, 0.35)",
         "glow-blue": "0 8px 30px -6px rgba(29, 78, 216, 0.35)",
+        "glow-orange": "0 8px 30px -6px rgba(249, 115, 22, 0.4)",
       },
       keyframes: {
         "accordion-down": {
